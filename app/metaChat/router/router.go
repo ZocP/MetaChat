@@ -9,7 +9,7 @@ import (
 	"go.uber.org/fx"
 )
 
-func InitRouters(viper *viper.Viper, cq cq.CQEventHandler, mc minecraft.EventHandler) http.InitRouters {
+func InitRouters(viper *viper.Viper, cq *cq.CQEventHandler, mc *minecraft.MCEventHandler) http.InitRouters {
 	return func(r *gin.Engine) {
 		r.GET("/v1/cq", cq.OnConnect())
 		r.POST("/v1/minecraft/event", mc.OnEvent())

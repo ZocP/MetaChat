@@ -6,5 +6,5 @@ type Config struct {
 }
 
 func Unmarshal(v *viper.Viper) *Config {
-
+	return &Config{}
 }

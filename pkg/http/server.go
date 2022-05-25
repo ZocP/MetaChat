@@ -13,10 +13,9 @@ import (
 )
 
 type Server struct {
-	config *Config
-	logger *zap.Logger
-	router *gin.Engine
-
+	config     *Config
+	logger     *zap.Logger
+	router     *gin.Engine
 	httpServer http.Server
 }
 
@@ -56,7 +55,6 @@ func (s *Server) Start() error {
 	if s.config.Port == 0 {
 		s.config.Port = 8080
 	}
-
 	// 默认 8080 端口
 	addr := fmt.Sprintf("%s:%d", s.config.Host, s.config.Port)
 	s.httpServer = http.Server{Addr: addr, Handler: s.router}
@@ -74,14 +72,11 @@ func (s *Server) Start() error {
 
 func (s *Server) Stop() error {
 	s.logger.Info("stopping http server")
-	// 平滑关闭,等待5秒钟处理
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
-
 	if err := s.httpServer.Shutdown(ctx); err != nil {
 		return errors.Wrap(err, "shutdown http server error")
 	}
-
 	return nil
 }
 
