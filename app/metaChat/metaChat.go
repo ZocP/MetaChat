@@ -2,6 +2,7 @@ package metaChat
 
 import (
 	"MetaChat/app/metaChat/cq"
+	"MetaChat/app/metaChat/eventBridge"
 	"MetaChat/app/metaChat/minecraft"
 	"MetaChat/app/metaChat/router"
 	"MetaChat/pkg/signal"
@@ -45,7 +46,7 @@ func (meta *MetaChat) Listen() error {
 			//send messages
 			done <- true
 		case cqMsg := <-cqch:
-			meta.log.Info("received cq message", zap.Any("cqMsg", cqMsg))
+			eventBridge.LogCQEvent(meta.log, cqMsg)
 		case mcMsg := <-mcch:
 			meta.log.Info("received mc message", zap.Any("mcMsg", mcMsg))
 		}

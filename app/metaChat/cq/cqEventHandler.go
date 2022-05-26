@@ -49,12 +49,10 @@ func (cq *CQEventHandler) listen() {
 		if err != nil {
 			cq.log.Error("error while reading message", zap.Error(err))
 		}
-
 		event, err := eventBridge.UnmarshalCQEvent(message)
 		if err != nil {
 			cq.log.Error("error while unmarshalling message", zap.Error(err))
 		}
-
 		cq.eventChannel <- event
 	}
 }
