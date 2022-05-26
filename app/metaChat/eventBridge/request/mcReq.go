@@ -1,4 +1,4 @@
-package eventBridge
+package request
 
 type MCEvent struct {
 }

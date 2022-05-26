@@ -1,20 +1,21 @@
 package minecraft
 
 import (
-	"MetaChat/app/metaChat/eventBridge"
 	"github.com/gin-gonic/gin"
+	"github.com/tidwall/gjson"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
 
 type MCEventHandler struct {
-	eventChannel chan eventBridge.MCEvent
+	eventChannel chan gjson.Result
+	replyChannel chan gjson.Result
 	log          *zap.Logger
 }
 
 func NewEventHandler(log *zap.Logger) *MCEventHandler {
 	return &MCEventHandler{
-		eventChannel: make(chan eventBridge.MCEvent),
+		eventChannel: make(chan gjson.Result),
 		log:          log,
 	}
 }
@@ -30,12 +31,16 @@ func (mc *MCEventHandler) OnStop() error {
 func (mc *MCEventHandler) OnEvent() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		//unwrap eventBridge and send eventBridge to eventBridge channel
-		mc.eventChannel <- eventBridge.MCEvent{}
+		mc.eventChannel <- gjson.Result{}
 	}
 }
 
-func (mc *MCEventHandler) GetEventCh() chan eventBridge.MCEvent {
+func (mc *MCEventHandler) GetEventCh() chan gjson.Result {
 	return mc.eventChannel
+}
+
+func (mc *MCEventHandler) GetReplyCh() chan gjson.Result {
+	return mc.replyChannel
 }
 
 func Provide() fx.Option {

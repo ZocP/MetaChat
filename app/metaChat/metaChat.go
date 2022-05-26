@@ -3,10 +3,12 @@ package metaChat
 import (
 	"MetaChat/app/metaChat/cq"
 	"MetaChat/app/metaChat/eventBridge"
+	"MetaChat/app/metaChat/eventBridge/request"
 	"MetaChat/app/metaChat/minecraft"
 	"MetaChat/app/metaChat/router"
 	"MetaChat/pkg/signal"
 	"github.com/spf13/viper"
+	"github.com/tidwall/gjson"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -22,6 +24,8 @@ type MetaChat struct {
 
 func (meta *MetaChat) OnStart() error {
 	meta.stop.Add(meta)
+	go meta.cqHandler.OnStart()
+	go meta.mcHandler.OnStart()
 	go func() {
 		if err := meta.Listen(); err != nil {
 			meta.log.Error("error while listening", zap.Error(err))
@@ -40,17 +44,54 @@ func (meta *MetaChat) OnStop() error {
 func (meta *MetaChat) Listen() error {
 	cqch := meta.cqHandler.GetEventCh()
 	mcch := meta.mcHandler.GetEventCh()
+	//cqreplych := meta.cqHandler.GetReplyCh()
+	//mcreplych := meta.mcHandler.GetReplyCh()
 	for {
 		select {
 		case done := <-meta.stopCh:
 			//send messages
+			if err := meta.cqHandler.OnStop(); err != nil {
+				meta.log.Error("error while stopping cq handler", zap.Error(err))
+			}
+			if err := meta.mcHandler.OnStop(); err != nil {
+				meta.log.Error("error while stopping mc handler", zap.Error(err))
+			}
 			done <- true
-		case cqMsg := <-cqch:
-			eventBridge.LogCQEvent(meta.log, cqMsg)
-		case mcMsg := <-mcch:
-			meta.log.Info("received mc message", zap.Any("mcMsg", mcMsg))
+		case cqMsgJson := <-cqch:
+			//eventBridge.LogCQEvent(meta.log, cqMsgJson)
+			meta.handleCQMessage(cqMsgJson)
+		case mcMsgJson := <-mcch:
+			eventBridge.LogCQEvent(meta.log, mcMsgJson)
 		}
 	}
+}
+
+func (meta *MetaChat) handleCQMessage(msg gjson.Result) {
+	postType := msg.Get(request.POST_TYPE).String()
+	switch postType {
+	case request.POST_TYPE_MESSAGE:
+		meta.handleCQPostMsg(msg)
+	case request.POST_TYPE_REQUEST:
+
+	}
+}
+
+func (meta *MetaChat) handleCQPostMsg(msg gjson.Result) {
+	switch msg.Get(request.MESSAGE_TYPE).String() {
+	case request.MESSAGE_TYPE_GROUP:
+		meta.handleCQPostMsgGroup(msg)
+	case request.MESSAGE_TYPE_PRIVATE:
+		meta.handleCQPostMsgPrivate(msg)
+
+	}
+}
+
+func (meta *MetaChat) handleCQPostMsgGroup(msg gjson.Result) {
+	meta.log.Info("receive group message", zap.Any("msg", msg.Get(request.MESSAGE).String()))
+}
+
+func (meta *MetaChat) handleCQPostMsgPrivate(msg gjson.Result) {
+	meta.log.Info("receive private message", zap.Any("msg", msg.Get(request.MESSAGE).String()))
 }
 
 func NewMetaChat(log *zap.Logger, viper *viper.Viper, cq *cq.CQEventHandler, mc *minecraft.MCEventHandler, stop *signal.StopHandler) *MetaChat {
