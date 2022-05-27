@@ -1,3 +1,7 @@
 package commands
 
-const ()
+var (
+	DefaultMCNormalUserCommands = []string{
+		"/ls",
+	}
+)

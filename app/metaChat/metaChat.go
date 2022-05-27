@@ -17,9 +17,8 @@ import (
 )
 
 type MetaChat struct {
-	log   *zap.Logger
-	viper *viper.Viper
-
+	log       *zap.Logger
+	viper     *viper.Viper
 	cqHandler *cq.CQEventHandler
 	mcHandler *minecraft.MCEventHandler
 
@@ -49,7 +48,6 @@ func (meta *MetaChat) OnStart() error {
 			meta.log.Error("error while listening", zap.Error(err))
 		}
 	}()
-
 	return nil
 }
 
@@ -82,10 +80,13 @@ func (meta *MetaChat) Listen() error {
 				meta.log.Error("error while stopping mc handler", zap.Error(err))
 			}
 			done <- true
-		case <-meta.cqReadyCh:
-			go meta.initBot()
+		case init := <-meta.cqReadyCh:
+			if init {
+				meta.log.Info("initializing bot")
+				go meta.initBot()
+			}
 		case cqMsgJson := <-meta.cqReceiveCh:
-			meta.handleCQMessage(cqMsgJson)
+			go meta.handleCQMessage(cqMsgJson)
 		case mcMsgJson := <-meta.mcReceiveCh:
 			eventBridge.LogCQEvent(meta.log, mcMsgJson)
 		}
@@ -97,21 +98,31 @@ func (meta *MetaChat) SendToQQ(msg response.CQResp) {
 
 func (meta *MetaChat) deleteCQEchoHandler(id ...string) {
 	for _, v := range id {
-		close(meta.echoHandlerCh[v])
 		delete(meta.echoHandlerCh, v)
 	}
+}
+
+func (meta *MetaChat) registerEchoHandler(id string) {
+	meta.echoHandlerCh[id] = make(chan gjson.Result)
+}
+
+func (meta *MetaChat) waitForResult(id string) gjson.Result {
+	data := <-meta.echoHandlerCh[id]
+	meta.deleteCQEchoHandler(id)
+	return data
 }
 
 func (meta *MetaChat) initBot() {
 	aRaw, aEcho := response.GetCQRespEcho(response.ACTION_GET_LOGIN_INFO, nil)
 	meta.SendToQQ(aRaw)
-	meta.echoHandlerCh[aEcho] = make(chan gjson.Result)
-	accountInfo := <-meta.echoHandlerCh[aEcho]
+	meta.registerEchoHandler(aEcho)
+	accountInfo := meta.waitForResult(aEcho)
+
 	raw, gEcho := response.GetCQRespEcho(response.ACTION_GET_GROUP_LIST, nil)
 	meta.SendToQQ(raw)
-	meta.echoHandlerCh[gEcho] = make(chan gjson.Result)
-	groupReady := make(chan interface{})
-	go func(ch chan interface{}) {
+	meta.registerEchoHandler(gEcho)
+	groupReady := make(chan map[int64]*group.Group)
+	go func(ch chan map[int64]*group.Group) {
 		msg := <-meta.echoHandlerCh[gEcho]
 		groupInfo := msg
 		groupList := make(map[int64]*group.Group)
@@ -128,13 +139,12 @@ func (meta *MetaChat) initBot() {
 		close(ch)
 	}(groupReady)
 	groupList := <-groupReady
-
 	rawList, listEcho := response.GetCQRespEcho(response.ACTION_GET_FRIEND_LIST, nil)
 	meta.SendToQQ(rawList)
-	meta.echoHandlerCh[listEcho] = make(chan gjson.Result)
-	friendReady := make(chan interface{})
+	meta.registerEchoHandler(listEcho)
+	friendReady := make(chan map[int64]*user.User)
 	go func() {
-		msg := <-meta.echoHandlerCh[listEcho]
+		msg := meta.waitForResult(listEcho)
 		friendList := make(map[int64]*user.User)
 		msg.Get(request.DATA).ForEach(func(key, value gjson.Result) bool {
 			character := user.NORMAL
@@ -147,7 +157,6 @@ func (meta *MetaChat) initBot() {
 			return true
 		})
 		friendReady <- friendList
-		close(friendReady)
 	}()
 
 	friendList := <-friendReady
@@ -157,11 +166,10 @@ func (meta *MetaChat) initBot() {
 	meta.qqBot = &cq.QQBot{
 		AccountId:  accountInfo.Get("user_id").Int(),
 		Nickname:   accountInfo.Get("nickname").String(),
-		FriendList: friendList.(map[int64]*user.User),
-		GroupList:  groupList.(map[int64]*group.Group),
+		FriendList: friendList,
+		GroupList:  groupList,
 	}
 
-	meta.deleteCQEchoHandler(aEcho, listEcho, gEcho)
 }
 
 func NewMetaChat(log *zap.Logger, viper *viper.Viper, cq *cq.CQEventHandler, mc *minecraft.MCEventHandler, stop *signal.StopHandler) *MetaChat {

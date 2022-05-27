@@ -21,7 +21,23 @@ const (
 
 	DATA = "data"
 
-	GROUP_ID = "group_id"
-	USER_ID  = "user_id"
-	ECHO     = "echo"
+	GROUP_ID               = "group_id"
+	GROUP_NAME             = "group_name"
+	GROUP_MEMO             = "group_memo"
+	GROUP_CREATE_TIME      = "group_create_time"
+	GROUP_MEMBER_COUNT     = "member_count"
+	GROUP_MAX_MEMBER_COUNT = "group_max_member_count"
+	USER_ID                = "user_id"
+	ECHO                   = "echo"
+	STATUS                 = "status"
+	STATUS_OK              = "ok"
+	STATUS_ERROR           = "failed"
+
+	SUB_TYPE         = "sub_type"
+	SUB_TYPE_kiCK_ME = "kick_me"
+	SUB_TYPE_APPROVE = "approve"
+
+	NOTICE_TYPE                = "notice_type"
+	NOTICE_TYPE_GROUP_INCREASE = "group_increase"
+	NOTICE_TYPE_GROUP_DECREASE = "group_reduce"
 )

@@ -6,6 +6,7 @@ import (
 	"MetaChat/app/metaChat/eventBridge/response"
 	"MetaChat/pkg/signal"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"github.com/spf13/viper"
 	"github.com/tidwall/gjson"
 	"go.uber.org/fx"
@@ -20,6 +21,7 @@ type CQEventHandler struct {
 	log          *zap.Logger
 	stopHandler  *signal.StopHandler
 	stopCh       chan chan bool
+	disconnectCh chan bool
 	readyCh      chan bool
 }
 
@@ -69,8 +71,11 @@ func (cq *CQEventHandler) OnConnect() gin.HandlerFunc {
 		cq.readyCh <- true
 
 		go cq.listen()
-
 	}
+}
+
+func (cq *CQEventHandler) OnDisconnect() {
+	cq.log.Info("CQEventHandler disconnected with cq handler")
 }
 
 func (cq *CQEventHandler) listen() {
@@ -78,6 +83,10 @@ func (cq *CQEventHandler) listen() {
 		eventJson, err := cq.conn.ReadMessage()
 		if err != nil {
 			cq.log.Error("error while reading message", zap.Error(err))
+			if websocket.IsCloseError(err) {
+				cq.log.Info("connection closed")
+				break
+			}
 		}
 		cq.eventChannel <- eventJson
 	}

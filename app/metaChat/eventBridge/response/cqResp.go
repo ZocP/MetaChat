@@ -28,6 +28,11 @@ type CQNormalMessage struct {
 	AutoEscape  bool   `json:"auto_escape"`
 }
 
+type CQGetGroupInfoMessage struct {
+	GroupID int64 `json:"group_id"`
+	NoCache bool  `json:"no_cache"`
+}
+
 func GetCQResp(action string, param interface{}) CQResp {
 	return CQResp{
 		Action: action,
@@ -73,5 +78,11 @@ func GetGroupMessage(groupID int64, message string) CQNormalMessage {
 		Message:     message,
 		AutoEscape:  false,
 	}
+}
 
+func GetGroupInfoMessage(groupID int64) CQGetGroupInfoMessage {
+	return CQGetGroupInfoMessage{
+		GroupID: groupID,
+		NoCache: true,
+	}
 }

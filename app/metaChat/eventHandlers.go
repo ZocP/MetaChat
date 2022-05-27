@@ -4,6 +4,7 @@ import (
 	"MetaChat/app/metaChat/cq/group"
 	"MetaChat/app/metaChat/eventBridge/request"
 	"MetaChat/app/metaChat/eventBridge/response"
+	"MetaChat/pkg/network"
 	"github.com/tidwall/gjson"
 	"go.uber.org/zap"
 	"regexp"
@@ -20,42 +21,34 @@ func (meta *MetaChat) handleCQMessage(msg gjson.Result) {
 	if meta.botIsReady {
 		switch postType {
 		case request.POST_TYPE_MESSAGE:
-			go meta.handleCQPostMsg(msg)
+			meta.onCQPostMsg(msg)
 		case request.POST_TYPE_REQUEST:
 			//to be implemented
 		case request.POST_TYPE_NOTICE:
-			//to be implemented
+			meta.onCQPostNotice(msg)
 		}
 	}
 }
 
-func (meta *MetaChat) handleCQPostMsg(msg gjson.Result) {
+func (meta *MetaChat) onCQPostMsg(msg gjson.Result) {
 	// use for handling group and private message
 	switch msg.Get(request.MESSAGE_TYPE).String() {
 	case request.MESSAGE_TYPE_GROUP:
-		meta.handleCQPostMsgGroup(msg)
+		meta.onCQPostMsgGroup(msg)
 	case request.MESSAGE_TYPE_PRIVATE:
-		meta.handleCQPostMsgPrivate(msg)
+		meta.onCQPostMsgPrivate(msg)
 	}
 }
 
-func (meta *MetaChat) handleCQPostMsgPrivate(msg gjson.Result) {
+//处理私聊消息
+func (meta *MetaChat) onCQPostMsgPrivate(msg gjson.Result) {
 	meta.log.Info("receive private message", zap.Any("msg", msg.Get(request.MESSAGE).String()))
 }
 
-func (meta *MetaChat) handleCQPostMsgGroup(msg gjson.Result) {
+//处理群消息
+func (meta *MetaChat) onCQPostMsgGroup(msg gjson.Result) {
 	meta.log.Info("receive group message", zap.Any("msg", msg.Get(request.MESSAGE).String()))
 	groupid := msg.Get(request.GROUP_ID).Int()
-	//mode := meta.cqHandler.GetGroupMode(groupid)
-	//if mode == group.MODE_REPEAT{
-	//	meta.cqreplych <- response.GetCQResp(response.ACTION_SEND_MESSAGE, response.GetNormalMessage(
-	//		request.MESSAGE_TYPE_GROUP,
-	//		0,
-	//		msg.Get(request.GROUP_ID).Int(),
-	//		msg.Get(request.MESSAGE).String(),
-	//		false,
-	//	))
-	//}
 	user := msg.Get(request.USER_ID).Int()
 	group := meta.qqBot.GetGroup(groupid)
 	message := msg.Get(request.MESSAGE).String()
@@ -64,7 +57,7 @@ func (meta *MetaChat) handleCQPostMsgGroup(msg gjson.Result) {
 		panic("compiler error")
 	}
 	if compiler.MatchString(message) {
-		meta.handleCommand(msg, user, group)
+		meta.onCommand(msg, user, group)
 		return
 	}
 
@@ -73,20 +66,21 @@ func (meta *MetaChat) handleCQPostMsgGroup(msg gjson.Result) {
 		panic("compiler2 error")
 	}
 	if compiler2.MatchString(message) {
-		meta.handleTransfer(msg, user, group)
+		meta.onTransfer(msg, user, group)
 		return
 	}
 }
 
 //处理用户给机器人的指令
-
-func (meta *MetaChat) handleCommand(msg gjson.Result, user int64, group *group.Group) {
-
+func (meta *MetaChat) onCommand(msg gjson.Result, user int64, group *group.Group) {
+	switch msg.Get(request.MESSAGE).String() {
+	case "//色图":
+		meta.onRandomPic(msg, user, group)
+	}
 }
 
 //处理命令转发
-
-func (meta *MetaChat) handleTransfer(msg gjson.Result, user int64, group *group.Group) {
+func (meta *MetaChat) onTransfer(msg gjson.Result, user int64, group *group.Group) {
 	if !meta.cqHandler.IsAdmin(user) {
 		meta.cqreplych <- response.GetCQResp(response.ACTION_SEND_MESSAGE, response.GetGroupMessage(
 			group.GetID(),
@@ -99,6 +93,64 @@ func (meta *MetaChat) handleTransfer(msg gjson.Result, user int64, group *group.
 	))
 }
 
-func (meta *MetaChat) handleMsgTransfer(msg gjson.Result, user int64, group *group.Group) {
+func (meta *MetaChat) onMsgTransfer(msg gjson.Result, user int64, group *group.Group) {
 
+}
+
+//处理色图
+func (meta *MetaChat) onRandomPic(msg gjson.Result, user int64, group *group.Group) {
+	meta.log.Info("on random pic")
+	result, err := network.GetFromUrlJSON("https://api.lolicon.app/setu/v2", map[string]string{"r18": "0"})
+	if err != nil {
+		meta.SendToQQ(response.GetCQResp(response.ACTION_SEND_MESSAGE, response.GetGroupMessage(group.GetID(), "获取涩图失败")))
+		return
+	}
+	var (
+		echo  string
+		event response.CQResp
+	)
+	result.Get("data").ForEach(func(key, value gjson.Result) bool {
+		event, echo = response.GetCQRespEcho(response.ACTION_SEND_MESSAGE, response.GetGroupMessage(group.GetID(), response.GetImageCQCode(value.Get("urls.original").String())))
+		meta.registerEchoHandler(echo)
+		meta.SendToQQ(event)
+		return true
+	})
+
+	go func() {
+		status := meta.waitForResult(echo)
+		if status.Get(request.STATUS).String() == request.STATUS_ERROR {
+			meta.SendToQQ(response.GetCQResp(response.ACTION_SEND_MESSAGE, response.GetGroupMessage(group.GetID(), "发送涩图失败，也许是太色了，请重试")))
+		}
+	}()
+	//meta.SendToQQ(response.GetCQResp(response.ACTION_SEND_MESSAGE, response.GetGroupMessage(group.GetID(), response.GetImageCQCode(url))))
+}
+
+func (meta *MetaChat) onCQPostNotice(msg gjson.Result) {
+	switch msg.Get(request.NOTICE_TYPE).String() {
+	case request.NOTICE_TYPE_GROUP_INCREASE:
+		meta.onGroupIncrease(msg)
+	case request.NOTICE_TYPE_GROUP_DECREASE:
+		meta.onGroupDecrease(msg)
+
+	}
+}
+
+func (meta *MetaChat) onGroupIncrease(msg gjson.Result) {
+	if msg.Get(request.SUB_TYPE).String() != request.SUB_TYPE_APPROVE {
+		return
+	}
+	send, echo := response.GetCQRespEcho(response.ACTION_SEND_MESSAGE, response.GetGroupInfoMessage(msg.Get(request.GROUP_ID).Int()))
+	meta.SendToQQ(send)
+	meta.registerEchoHandler(echo)
+	result := meta.waitForResult(echo)
+	group := &group.Group{
+		GroupName: result.Get(request.GROUP_NAME).String(),
+		GroupID:   result.Get(request.GROUP_ID).Int(),
+	}
+	meta.qqBot.AddGroup(group)
+	meta.log.Info("on group increase")
+}
+
+func (meta *MetaChat) onGroupDecrease(msg gjson.Result) {
+	meta.log.Info("on group decrease")
 }
