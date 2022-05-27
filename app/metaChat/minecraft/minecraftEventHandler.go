@@ -9,19 +9,25 @@ import (
 
 type MCEventHandler struct {
 	eventChannel chan gjson.Result
-	replyChannel chan gjson.Result
+	replyChannel chan interface{}
 	log          *zap.Logger
 }
 
 func NewEventHandler(log *zap.Logger) *MCEventHandler {
 	return &MCEventHandler{
 		eventChannel: make(chan gjson.Result),
+		replyChannel: make(chan interface{}),
 		log:          log,
 	}
 }
 
 func (mc *MCEventHandler) OnStart() {
-	//process on start event
+	for {
+		select {
+		case event := <-mc.replyChannel:
+			mc.log.Debug("Received event", zap.Any("event", event))
+		}
+	}
 }
 
 func (mc *MCEventHandler) OnStop() error {
@@ -39,7 +45,7 @@ func (mc *MCEventHandler) GetEventCh() chan gjson.Result {
 	return mc.eventChannel
 }
 
-func (mc *MCEventHandler) GetReplyCh() chan gjson.Result {
+func (mc *MCEventHandler) GetReplyCh() chan interface{} {
 	return mc.replyChannel
 }
 

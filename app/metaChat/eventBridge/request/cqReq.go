@@ -23,4 +23,5 @@ const (
 
 	GROUP_ID = "group_id"
 	USER_ID  = "user_id"
+	ECHO     = "echo"
 )

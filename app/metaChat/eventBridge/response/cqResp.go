@@ -1,11 +1,17 @@
 package response
 
-import "time"
+import (
+	"time"
+)
 
 const (
 	ACTION_SEND_MESSAGE  = "send_msg"
 	MESSAGE_TYPE_GROUP   = "group"
 	MESSAGE_TYPE_PRIVATE = "private"
+
+	ACTION_GET_LOGIN_INFO  = "get_login_info"
+	ACTION_GET_GROUP_LIST  = "get_group_list"
+	ACTION_GET_FRIEND_LIST = "get_friend_list"
 )
 
 type CQResp struct {
@@ -31,6 +37,16 @@ func GetCQResp(action string, param interface{}) CQResp {
 	}
 }
 
+func GetCQRespEcho(action string, param interface{}) (CQResp, string) {
+	t := time.Now().Format("2006-01-02 15:04:05")
+	return CQResp{
+		Action: action,
+		Params: param,
+		//current time to string
+		Echo: t,
+	}, t
+}
+
 func GetNormalMessage(messageType string, userID int64, groupID int64, message string, autoEscape bool) CQNormalMessage {
 	return CQNormalMessage{
 		MessageType: messageType,
@@ -39,4 +55,23 @@ func GetNormalMessage(messageType string, userID int64, groupID int64, message s
 		Message:     message,
 		AutoEscape:  autoEscape,
 	}
+}
+
+func GetPrivateMessage(userID int64, message string) CQNormalMessage {
+	return CQNormalMessage{
+		MessageType: MESSAGE_TYPE_PRIVATE,
+		UserID:      userID,
+		Message:     message,
+		AutoEscape:  false,
+	}
+}
+
+func GetGroupMessage(groupID int64, message string) CQNormalMessage {
+	return CQNormalMessage{
+		MessageType: MESSAGE_TYPE_GROUP,
+		GroupID:     groupID,
+		Message:     message,
+		AutoEscape:  false,
+	}
+
 }

@@ -28,3 +28,7 @@ func (g *Group) GetUserHandler(id int64) func() {
 func (g *Group) ClearUserHandler(id int64) {
 	delete(g.UserHandler, id)
 }
+
+func (g *Group) GetID() int64 {
+	return g.GroupID
+}
