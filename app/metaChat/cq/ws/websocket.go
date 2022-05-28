@@ -2,7 +2,7 @@ package ws
 
 import (
 	"MetaChat/app/metaChat/cq/config"
-	"MetaChat/app/metaChat/eventBridge/request"
+	"MetaChat/pkg/cq"
 	"github.com/gorilla/websocket"
 	"github.com/tidwall/gjson"
 	"go.uber.org/zap"
@@ -37,7 +37,7 @@ func (ws *WS) ReadMessage() (gjson.Result, error) {
 		ws.log.Error("error while unmarshalling message", zap.Error(err))
 		return gjson.Result{}, err
 	}
-	if eventJson.Get(request.META_EVENT_TYPE).String() != request.META_EVENT_TYPE_HEARTBEAT {
+	if eventJson.Get(cq.META_EVENT_TYPE).String() != cq.META_EVENT_TYPE_HEARTBEAT {
 		ws.log.Debug("receive message", zap.Any("message", eventJson.String()))
 	}
 	return eventJson, nil

@@ -1,14 +1,12 @@
-package response
+package cq
 
 import (
+	"strconv"
 	"time"
 )
 
 const (
-	ACTION_SEND_MESSAGE  = "send_msg"
-	MESSAGE_TYPE_GROUP   = "group"
-	MESSAGE_TYPE_PRIVATE = "private"
-
+	ACTION_SEND_MESSAGE    = "send_msg"
 	ACTION_GET_LOGIN_INFO  = "get_login_info"
 	ACTION_GET_GROUP_LIST  = "get_group_list"
 	ACTION_GET_FRIEND_LIST = "get_friend_list"
@@ -43,7 +41,7 @@ func GetCQResp(action string, param interface{}) CQResp {
 }
 
 func GetCQRespEcho(action string, param interface{}) (CQResp, string) {
-	t := time.Now().Format("2006-01-02 15:04:05")
+	t := strconv.FormatInt(time.Now().UnixMicro(), 10)
 	return CQResp{
 		Action: action,
 		Params: param,
@@ -80,9 +78,25 @@ func GetGroupMessage(groupID int64, message string) CQNormalMessage {
 	}
 }
 
+func GetMessageAt(id int64, message string, at string) CQNormalMessage {
+	switch at {
+	case MESSAGE_TYPE_GROUP:
+		return GetGroupMessage(id, message)
+	case MESSAGE_TYPE_PRIVATE:
+		return GetPrivateMessage(id, message)
+	}
+	panic("not implemented")
+}
+
 func GetGroupInfoMessage(groupID int64) CQGetGroupInfoMessage {
 	return CQGetGroupInfoMessage{
 		GroupID: groupID,
 		NoCache: true,
 	}
+}
+
+func GetUserInfo(userID int64) CQResp {
+	//TODO get user info
+	//return GetCQResp(ACTION_GET_LOGIN_INFO, (userID))
+	panic("not implemented")
 }

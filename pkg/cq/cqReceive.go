@@ -1,8 +1,9 @@
-package request
+package cq
 
 const (
-	TIME              = "time"
-	SELF_ID           = "self_id"
+	TIME    = "time"
+	SELF_ID = "self_id"
+
 	POST_TYPE         = "post_type"
 	POST_TYPE_MESSAGE = "message"
 	POST_TYPE_REQUEST = "request"
@@ -19,7 +20,8 @@ const (
 	MESSAGE     = "message"
 	RAW_MESSAGE = "raw_message"
 
-	DATA = "data"
+	DATA     = "data"
+	NICKNAME = "nickname"
 
 	GROUP_ID               = "group_id"
 	GROUP_NAME             = "group_name"
