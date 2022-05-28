@@ -20,8 +20,6 @@ type CQEventHandler struct {
 	replyChannel chan response.CQResp
 	log          *zap.Logger
 	stopHandler  *signal.StopHandler
-	stopCh       chan chan bool
-	disconnectCh chan bool
 	readyCh      chan bool
 }
 
@@ -69,7 +67,6 @@ func (cq *CQEventHandler) OnConnect() gin.HandlerFunc {
 		}
 		cq.log.Info("life cycle established", zap.String("message", lc.String()))
 		cq.readyCh <- true
-
 		go cq.listen()
 	}
 }
@@ -90,6 +87,7 @@ func (cq *CQEventHandler) listen() {
 		}
 		cq.eventChannel <- eventJson
 	}
+	cq.readyCh <- false
 }
 
 func (cq *CQEventHandler) IsAdmin(id int64) bool {

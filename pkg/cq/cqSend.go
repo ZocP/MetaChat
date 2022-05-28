@@ -1,14 +1,9 @@
-package response
+package cq
 
-import (
-	"time"
-)
+import "time"
 
 const (
-	ACTION_SEND_MESSAGE  = "send_msg"
-	MESSAGE_TYPE_GROUP   = "group"
-	MESSAGE_TYPE_PRIVATE = "private"
-
+	ACTION_SEND_MESSAGE    = "send_msg"
 	ACTION_GET_LOGIN_INFO  = "get_login_info"
 	ACTION_GET_GROUP_LIST  = "get_group_list"
 	ACTION_GET_FRIEND_LIST = "get_friend_list"
@@ -85,4 +80,10 @@ func GetGroupInfoMessage(groupID int64) CQGetGroupInfoMessage {
 		GroupID: groupID,
 		NoCache: true,
 	}
+}
+
+func GetUserInfo(userID int64) CQResp {
+	//TODO get user info
+	//return GetCQResp(ACTION_GET_LOGIN_INFO, (userID))
+	panic("not implemented")
 }

@@ -2,8 +2,6 @@ package metaChat
 
 import (
 	"MetaChat/app/metaChat/cq/group"
-	"MetaChat/app/metaChat/eventBridge/request"
-	"MetaChat/app/metaChat/eventBridge/response"
 	"MetaChat/pkg/network"
 	"github.com/tidwall/gjson"
 	"go.uber.org/zap"
@@ -40,16 +38,18 @@ func (meta *MetaChat) onCQPostMsg(msg gjson.Result) {
 	}
 }
 
-//处理私聊消息
+//————————————————————————————处理所有私聊消息————————————————————————————
 func (meta *MetaChat) onCQPostMsgPrivate(msg gjson.Result) {
-	meta.log.Info("receive private message", zap.Any("msg", msg.Get(request.MESSAGE).String()))
+	meta.log.Info("receive &processing private message from", zap.Int64("user id", msg.Get(request.USER_ID).Int()), zap.Any("msg", msg.Get(request.MESSAGE).String()))
+
 }
 
-//处理群消息
+//————————————————————————————处理所有群消息————————————————————————————
 func (meta *MetaChat) onCQPostMsgGroup(msg gjson.Result) {
-	meta.log.Info("receive group message", zap.Any("msg", msg.Get(request.MESSAGE).String()))
+
 	groupid := msg.Get(request.GROUP_ID).Int()
 	user := msg.Get(request.USER_ID).Int()
+	meta.log.Info("receive & processing group message from", zap.Int64("group", groupid), zap.Int64("user", user), zap.Any("msg", msg.Get(request.MESSAGE).String()))
 	group := meta.qqBot.GetGroup(groupid)
 	message := msg.Get(request.MESSAGE).String()
 	compiler, err := regexp.Compile("^//")
@@ -73,31 +73,15 @@ func (meta *MetaChat) onCQPostMsgGroup(msg gjson.Result) {
 
 //处理用户给机器人的指令
 func (meta *MetaChat) onCommand(msg gjson.Result, user int64, group *group.Group) {
+	//TODO: 实现命令解析和处理
 	switch msg.Get(request.MESSAGE).String() {
 	case "//色图":
 		meta.onRandomPic(msg, user, group)
+	case "//addadmin":
 	}
 }
 
-//处理命令转发
-func (meta *MetaChat) onTransfer(msg gjson.Result, user int64, group *group.Group) {
-	if !meta.cqHandler.IsAdmin(user) {
-		meta.cqreplych <- response.GetCQResp(response.ACTION_SEND_MESSAGE, response.GetGroupMessage(
-			group.GetID(),
-			"你没有权限使用该命令,要添加管理员，请让管理员输入//addadmin [qq]",
-		))
-	}
-	meta.mcreplych <- response.GetCQResp(response.ACTION_SEND_MESSAGE, response.GetGroupMessage(
-		group.GetID(),
-		msg.Get(request.MESSAGE).String(),
-	))
-}
-
-func (meta *MetaChat) onMsgTransfer(msg gjson.Result, user int64, group *group.Group) {
-
-}
-
-//处理色图
+//处理色图指令
 func (meta *MetaChat) onRandomPic(msg gjson.Result, user int64, group *group.Group) {
 	meta.log.Info("on random pic")
 	result, err := network.GetFromUrlJSON("https://api.lolicon.app/setu/v2", map[string]string{"r18": "0"})
@@ -125,6 +109,26 @@ func (meta *MetaChat) onRandomPic(msg gjson.Result, user int64, group *group.Gro
 	//meta.SendToQQ(response.GetCQResp(response.ACTION_SEND_MESSAGE, response.GetGroupMessage(group.GetID(), response.GetImageCQCode(url))))
 }
 
+//处理命令转发
+func (meta *MetaChat) onTransfer(msg gjson.Result, user int64, group *group.Group) {
+	if !meta.cqHandler.IsAdmin(user) {
+		meta.SendToQQ(response.GetCQResp(response.ACTION_SEND_MESSAGE, response.GetGroupMessage(
+			group.GetID(),
+			"你没有权限使用该命令,要添加管理员，请让管理员输入//addadmin [qq]",
+		)))
+	}
+	meta.SendToQQ(response.GetCQResp(response.ACTION_SEND_MESSAGE, response.GetGroupMessage(
+		group.GetID(),
+		msg.Get(request.MESSAGE).String(),
+	)))
+}
+
+//处理消息转发
+func (meta *MetaChat) onMsgTransfer(msg gjson.Result, user int64, group *group.Group) {
+
+}
+
+//——————————————————————————————处理所有通知——————————————————————————————
 func (meta *MetaChat) onCQPostNotice(msg gjson.Result) {
 	switch msg.Get(request.NOTICE_TYPE).String() {
 	case request.NOTICE_TYPE_GROUP_INCREASE:
