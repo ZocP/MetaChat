@@ -1,12 +1,12 @@
 package ws
 
 import (
-	"MetaChat/app/metaChat/cq/config"
+	"MetaChat/app/metaChat/qqBot/config"
+	"MetaChat/app/metaChat/qqBot/io"
 	"MetaChat/pkg/cq"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/tidwall/gjson"
-	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
 
@@ -15,6 +15,7 @@ type WS struct {
 	connected bool
 	config    *config.Config
 	messageCh chan gjson.Result
+	rawCh     chan []byte
 	log       *zap.Logger
 }
 
@@ -32,10 +33,12 @@ func (ws *WS) SendMessage(msg cq.CQResp) {
 	}
 }
 
-func NewWS(config *config.Config, log *zap.Logger) *WS {
+func NewWS(config *config.Config, log *zap.Logger) io.IOHandler {
 	return &WS{
-		config: config,
-		log:    log,
+		config:    config,
+		log:       log,
+		messageCh: make(chan gjson.Result),
+		rawCh:     make(chan []byte),
 	}
 }
 
@@ -78,10 +81,12 @@ func (ws *WS) listen() {
 }
 
 func (ws *WS) ReadMessage() (gjson.Result, error) {
+
 	_, raw, err := ws.Conn.ReadMessage()
 	if err != nil {
 		return gjson.Result{}, err
 	}
+
 	eventJson := gjson.Parse(string(raw))
 	if err != nil {
 		return gjson.Result{}, err
@@ -90,8 +95,4 @@ func (ws *WS) ReadMessage() (gjson.Result, error) {
 		ws.log.Debug("receive message", zap.Any("message", eventJson.String()))
 	}
 	return eventJson, nil
-}
-
-func Provide() fx.Option {
-	return fx.Provide(NewWS)
 }

@@ -3,7 +3,8 @@ package cq
 import (
 	"MetaChat/app/metaChat/cq/config"
 	"MetaChat/app/metaChat/cq/ws"
-	"MetaChat/app/metaChat/eventBridge/response"
+	"MetaChat/pkg/cq"
+
 	"MetaChat/pkg/signal"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -17,7 +18,7 @@ type CQEventHandler struct {
 	config       *config.Config
 	conn         *ws.WS
 	eventChannel chan gjson.Result
-	replyChannel chan response.CQResp
+	replyChannel chan cq.CQResp
 	log          *zap.Logger
 	stopHandler  *signal.StopHandler
 	readyCh      chan bool
@@ -28,7 +29,7 @@ func NewCQEventHandler(viper *viper.Viper, logger *zap.Logger, handler *signal.S
 		log:          logger,
 		config:       config.Unmarshal(viper),
 		eventChannel: make(chan gjson.Result),
-		replyChannel: make(chan response.CQResp),
+		replyChannel: make(chan cq.CQResp),
 		readyCh:      make(chan bool),
 		stopHandler:  handler,
 	}
@@ -106,7 +107,7 @@ func (cq *CQEventHandler) GetEventCh() chan gjson.Result {
 	return cq.eventChannel
 }
 
-func (cq *CQEventHandler) GetReplyCh() chan response.CQResp {
+func (cq *CQEventHandler) GetReplyCh() chan cq.CQResp {
 	return cq.replyChannel
 }
 

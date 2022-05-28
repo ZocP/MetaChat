@@ -44,7 +44,7 @@ func (meta *MetaChat) OnStop() error {
 }
 
 func (meta *MetaChat) Listen() error {
-	qqMsgCh := meta.qqBot.GetThrowMessageCh()
+	qqMsgCh := meta.qqBot.GetMessageCh()
 	for {
 		select {
 		case done := <-meta.stopCh:
@@ -58,11 +58,10 @@ func (meta *MetaChat) Listen() error {
 	}
 }
 
-func NewMetaChat(log *zap.Logger, viper *viper.Viper, cq *cq.CQEventHandler, mc *minecraft.MCEventHandler, stop *signal.StopHandler, bot *qqBot.QQBot) *MetaChat {
+func NewMetaChat(log *zap.Logger, viper *viper.Viper, mc *minecraft.MCEventHandler, stop *signal.StopHandler, bot *qqBot.QQBot) *MetaChat {
 	return &MetaChat{
 		log:       log,
 		viper:     viper,
-		cqHandler: cq,
 		mcHandler: mc,
 		stopCh:    make(chan chan bool),
 		stop:      stop,
