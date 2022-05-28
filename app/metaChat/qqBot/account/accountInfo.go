@@ -41,6 +41,10 @@ func (account *AccountInfo) OnStart() {
 	}()
 }
 
+func (account *AccountInfo) GetGroupInfo(groupId int64) Group {
+	return *account.GroupList[groupId]
+}
+
 func (account *AccountInfo) AddGroup(group *Group) {
 	account.addGroupCh <- group
 }

@@ -59,7 +59,7 @@ func (meta *MetaChat) handleCQMessage(msg gjson.Result) {
 //	user := msg.Get(request.USER_ID).Int()
 //	meta.log.Info("receive & processing group message from", zap.Int64("group", groupid), zap.Int64("user", user), zap.Any("msg", msg.Get(request.MESSAGE).String()))
 //	group := meta.qqBot.GetGroup(groupid)
-//	message := msg.Get(request.MESSAGE).String()
+////	message := msg.Get(request.MESSAGE).String()
 //	compiler, err := regexp.Compile("^//")
 //	if err != nil {
 //		panic("compiler error")

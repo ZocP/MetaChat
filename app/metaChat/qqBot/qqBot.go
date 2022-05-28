@@ -15,7 +15,7 @@ import (
 type QQBot struct {
 	log *zap.Logger
 
-	account *account.AccountInfo
+	*account.AccountInfo
 
 	config *config.Config
 
@@ -163,7 +163,7 @@ func (qq *QQBot) initAccountInfo() {
 		return true
 	})
 
-	qq.account = account.NewAccountInfo(
+	qq.AccountInfo = account.NewAccountInfo(
 		loginResult.Get(cq.USER_ID).Int(),
 		loginResult.Get(cq.NICKNAME).String(),
 		friendList,
