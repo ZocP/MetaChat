@@ -1,10 +1,15 @@
 package commands
 
-import "strings"
+import (
+	"regexp"
+	"strings"
+)
+
+//map[flag][]values
 
 type Command struct {
 	Name     string
-	Param    []string
+	Param    map[string][]string
 	Raw      string
 	HasParam bool
 }
@@ -15,9 +20,22 @@ func UnpackCommand(cmd string) Command {
 	if len(params) == 1 {
 		return Command{Name: params[0], Raw: cmd, HasParam: false}
 	}
+
+	param := make(map[string][]string)
+	var flag string
+	for _, v := range params[1:] {
+		compiler := regexp.MustCompile("^-")
+		if compiler.MatchString(v) {
+			flag = v[1:]
+			param[flag] = []string{}
+			continue
+		}
+		param[flag] = append(param[flag], v)
+	}
+
 	return Command{
 		Name:     params[0],
-		Param:    params[1:],
+		Param:    param,
 		Raw:      cmd,
 		HasParam: true,
 	}

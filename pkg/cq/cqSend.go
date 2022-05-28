@@ -1,6 +1,9 @@
 package cq
 
-import "time"
+import (
+	"strconv"
+	"time"
+)
 
 const (
 	ACTION_SEND_MESSAGE    = "send_msg"
@@ -38,7 +41,7 @@ func GetCQResp(action string, param interface{}) CQResp {
 }
 
 func GetCQRespEcho(action string, param interface{}) (CQResp, string) {
-	t := time.Now().Format("2006-01-02 15:04:05")
+	t := strconv.FormatInt(time.Now().UnixMicro(), 10)
 	return CQResp{
 		Action: action,
 		Params: param,
