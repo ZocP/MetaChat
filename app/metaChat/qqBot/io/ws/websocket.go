@@ -17,6 +17,7 @@ type WS struct {
 	messageCh chan gjson.Result
 	rawCh     chan []byte
 	ready     chan bool
+	stopCh    chan bool
 	log       *zap.Logger
 }
 
@@ -45,6 +46,7 @@ func NewWS(config *config.Config, log *zap.Logger) io.IOHandler {
 		messageCh: make(chan gjson.Result),
 		rawCh:     make(chan []byte),
 		ready:     make(chan bool),
+		stopCh:    make(chan bool),
 	}
 }
 
@@ -59,6 +61,7 @@ func (ws *WS) OnConnect() gin.HandlerFunc {
 		ws.connected = true
 		ws.ready <- true
 		go ws.listen()
+		go ws.ReadMessage()
 	}
 }
 
@@ -75,32 +78,31 @@ func (ws *WS) listen() {
 		}
 	}(ws)
 	for {
-		//TODO: 更改成channel
-		message, err := ws.ReadMessage()
-		if err != nil {
-			ws.log.Error("error while reading message", zap.Error(err))
-			if websocket.IsCloseError(err) {
-				ws.log.Info("connection closed")
-				break
-			}
+		select {
+		case <-ws.stopCh:
+			ws.OnDisconnect()
+			ws.log.Info("websocket closed")
+			return
+		case raw := <-ws.rawCh:
+			ws.messageCh <- gjson.Parse(string(raw))
 		}
-		ws.messageCh <- message
 	}
 }
 
-func (ws *WS) ReadMessage() (gjson.Result, error) {
-
-	_, raw, err := ws.Conn.ReadMessage()
-	if err != nil {
-		return gjson.Result{}, err
-	}
-
-	eventJson := gjson.Parse(string(raw))
-	if err != nil {
-		return gjson.Result{}, err
-	}
-	if eventJson.Get(cq.META_EVENT_TYPE).String() != cq.META_EVENT_TYPE_HEARTBEAT {
-		//ws.log.Debug("receive message", zap.Any("message", eventJson.String()))
-	}
-	return eventJson, nil
+func (ws *WS) ReadMessage() {
+	go func() {
+		for {
+			_, raw, err := ws.Conn.ReadMessage()
+			if err != nil {
+				ws.log.Error("error while reading message", zap.Error(err))
+				if websocket.IsCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					ws.log.Info("connection closed")
+					ws.connected = false
+					ws.ready <- false
+					break
+				}
+			}
+			ws.rawCh <- raw
+		}
+	}()
 }

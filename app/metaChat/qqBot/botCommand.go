@@ -4,6 +4,7 @@ import (
 	"MetaChat/app/metaChat/qqBot/commands"
 	"MetaChat/pkg/cq"
 	"MetaChat/pkg/lolicon"
+	"fmt"
 	"github.com/tidwall/gjson"
 	"go.uber.org/zap"
 )
@@ -71,13 +72,18 @@ func (qq *QQBot) onRandomPics(msg gjson.Result, cmd commands.Command, at string)
 		return
 	}
 	result.Get("data").ForEach(func(key, value gjson.Result) bool {
-		event, echo := cq.GetCQRespEcho(cq.ACTION_SEND_MESSAGE, cq.GetMessageAt(ID, cq.GetImageCQCode(value.Get("urls.original").String()), at))
+		link := value.Get("urls.original").String()
+		cqCode := cq.GetImageCQCode(link)
+		event, echo := cq.GetCQRespEcho(cq.ACTION_SEND_MESSAGE, cq.GetMessageAt(ID, cqCode, at))
 		qq.RegisterEchoHandler(echo)
 		qq.SendMessage(event)
+		qq.log.Debug("cq code sent", zap.Any("cqCode", cqCode))
 		go func() {
 			status := qq.WaitForResult(echo)
 			if status.Get(cq.STATUS).String() == cq.STATUS_ERROR {
-				qq.SendMessage(cq.GetCQResp(cq.ACTION_SEND_MESSAGE, cq.GetMessageAt(ID, "发送涩图失败，也许是太色了，请重试", at)))
+				fmtmsg := fmt.Sprintf("发送涩图失败，也许是太色了，但是可以从下面的链接访问\n%s", link)
+				qq.SendMessage(cq.GetCQResp(cq.ACTION_SEND_MESSAGE, cq.GetMessageAt(ID, fmtmsg, at)))
+				qq.log.Debug("error while sending message", zap.Any("status", status))
 			}
 		}()
 		return true

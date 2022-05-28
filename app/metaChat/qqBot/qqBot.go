@@ -70,7 +70,11 @@ func (qq *QQBot) OnStart() {
 					qq.isReady = false
 				}
 			case msg := <-msgCh:
-				go qq.onMessage(msg)
+				if qq.isReady {
+					go qq.onMessage(msg)
+					break
+				}
+				qq.log.Info("receive message but bot not ready yet", zap.Any("msg", msg))
 			case <-qq.stopCh:
 				qq.notifyStop()
 				break
@@ -183,7 +187,8 @@ func (qq *QQBot) initAccountInfo() {
 		friendList,
 		groupList,
 	)
-
+	qq.log.Info("account info initialized! ", zap.Any("account", qq.AccountInfo))
+	qq.log.Info("QQBot is ready!")
 }
 
 func Provide() fx.Option {

@@ -5,9 +5,6 @@ import (
 	"MetaChat/app/metaChat/cq/user"
 )
 
-type RawInfo struct {
-}
-
 type QQBot struct {
 	AccountId  int64
 	Nickname   string

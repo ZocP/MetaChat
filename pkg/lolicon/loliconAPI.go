@@ -134,8 +134,8 @@ func ParseParamAll(m map[string][]string) (Param, error) {
 			if err != nil {
 				return result, err
 			}
-			if num > 3 {
-				num = 3
+			if num > 50 {
+				num = 50
 			}
 			result.Num = num
 		case "uid":
