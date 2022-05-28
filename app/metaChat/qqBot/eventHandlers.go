@@ -27,7 +27,7 @@ func (qq *QQBot) onPostMessage(msg gjson.Result) {
 	}
 	if compiler.MatchString(message) {
 		qq.log.Info("On Bot Command", zap.Int64("group", groupid), zap.Int64("user", user), zap.Any("msg", message))
-		qq.onBotCommand(msg)
+		qq.onBotCommand(msg, msg.Get(cq.MESSAGE_TYPE).String())
 		return
 	}
 }

@@ -115,3 +115,59 @@ func ParseParam(m map[string][]string) (Param, error) {
 	result.Adult = NOTR18
 	return result, nil
 }
+
+func ParseParamAll(m map[string][]string) (Param, error) {
+	var (
+		result Param
+		err    error
+		num    int
+	)
+	for k, v := range m {
+		switch k {
+		case "r18":
+			result.Adult, err = strconv.Atoi(v[0])
+			if err != nil {
+				return result, err
+			}
+		case "num":
+			num, err = strconv.Atoi(v[0])
+			if err != nil {
+				return result, err
+			}
+			if num > 3 {
+				num = 3
+			}
+			result.Num = num
+		case "uid":
+			result.Uid, err = strconv.Atoi(v[0])
+			if err != nil {
+				return result, err
+			}
+		case "keyword":
+			result.KeyWord = v[0]
+		case "tag":
+			result.Tag = v
+		case "size":
+			result.Size = v
+		case "proxy":
+			result.Proxy = v[0]
+		case "dateAfter":
+			result.DateAfter, err = strconv.Atoi(v[0])
+
+			if err != nil {
+				return result, err
+			}
+		case "dateBefore":
+			result.DateBefore, err = strconv.Atoi(v[0])
+			if err != nil {
+				return result, err
+			}
+		case "dsc":
+			result.DSC, err = strconv.ParseBool(v[0])
+			if err != nil {
+				return result, err
+			}
+		}
+	}
+	return result, nil
+}

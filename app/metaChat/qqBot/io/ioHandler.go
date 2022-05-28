@@ -10,4 +10,5 @@ type IOHandler interface {
 	OnConnect() gin.HandlerFunc
 	GetMessageCh() <-chan gjson.Result
 	SendMessage(msg cq.CQResp)
+	GetOnReadyCh() <-chan bool
 }

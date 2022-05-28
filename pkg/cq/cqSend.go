@@ -78,6 +78,16 @@ func GetGroupMessage(groupID int64, message string) CQNormalMessage {
 	}
 }
 
+func GetMessageAt(id int64, message string, at string) CQNormalMessage {
+	switch at {
+	case MESSAGE_TYPE_GROUP:
+		return GetGroupMessage(id, message)
+	case MESSAGE_TYPE_PRIVATE:
+		return GetPrivateMessage(id, message)
+	}
+	panic("not implemented")
+}
+
 func GetGroupInfoMessage(groupID int64) CQGetGroupInfoMessage {
 	return CQGetGroupInfoMessage{
 		GroupID: groupID,

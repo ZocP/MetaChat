@@ -10,6 +10,7 @@ import (
 	"github.com/tidwall/gjson"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"time"
 )
 
 type QQBot struct {
@@ -19,8 +20,9 @@ type QQBot struct {
 
 	config *config.Config
 
-	stop   *signal.StopHandler
-	stopCh chan bool
+	stop        *signal.StopHandler
+	stopCh      chan bool
+	connReadyCh <-chan bool
 
 	throwCh chan gjson.Result
 	getCh   chan cq.CQResp
@@ -53,11 +55,20 @@ func NewQQBot(log *zap.Logger, config *config.Config, handler io.IOHandler, stop
 func (qq *QQBot) OnStart() {
 	qq.stop.Add(qq)
 	qq.RegisterHandlers()
+
+	qq.connReadyCh = qq.IOHandler.GetOnReadyCh()
 	msgCh := qq.IOHandler.GetMessageCh()
 	//loop to listen message from IOHandler
 	go func() {
 		for {
 			select {
+			case ready := <-qq.connReadyCh:
+				if ready {
+					qq.isReady = true
+					go qq.initAccountInfo()
+				} else {
+					qq.isReady = false
+				}
 			case msg := <-msgCh:
 				go qq.onMessage(msg)
 			case <-qq.stopCh:
@@ -128,6 +139,9 @@ func (qq *QQBot) notifyStop() {
 }
 
 func (qq *QQBot) initAccountInfo() {
+	qq.log.Info("intializing account info ...")
+	time.Sleep(time.Second * 5)
+
 	login, loginID := cq.GetCQRespEcho(cq.ACTION_GET_LOGIN_INFO, nil)
 	qq.SendMessage(login)
 	qq.RegisterEchoHandler(loginID)

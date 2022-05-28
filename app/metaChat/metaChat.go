@@ -2,7 +2,6 @@ package metaChat
 
 import (
 	"MetaChat/app/metaChat/config"
-	"MetaChat/app/metaChat/cq"
 	"MetaChat/app/metaChat/minecraft"
 	"MetaChat/app/metaChat/qqBot"
 	"MetaChat/app/metaChat/router"
@@ -16,7 +15,6 @@ type MetaChat struct {
 	log       *zap.Logger
 	viper     *viper.Viper
 	config    *config.Config
-	cqHandler *cq.CQEventHandler
 	mcHandler *minecraft.MCEventHandler
 
 	stopCh chan chan bool

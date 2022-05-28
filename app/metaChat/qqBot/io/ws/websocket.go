@@ -16,6 +16,7 @@ type WS struct {
 	config    *config.Config
 	messageCh chan gjson.Result
 	rawCh     chan []byte
+	ready     chan bool
 	log       *zap.Logger
 }
 
@@ -33,12 +34,17 @@ func (ws *WS) SendMessage(msg cq.CQResp) {
 	}
 }
 
+func (ws *WS) GetOnReadyCh() <-chan bool {
+	return ws.ready
+}
+
 func NewWS(config *config.Config, log *zap.Logger) io.IOHandler {
 	return &WS{
 		config:    config,
 		log:       log,
 		messageCh: make(chan gjson.Result),
 		rawCh:     make(chan []byte),
+		ready:     make(chan bool),
 	}
 }
 
@@ -51,12 +57,14 @@ func (ws *WS) OnConnect() gin.HandlerFunc {
 		}
 		ws.Conn = conn
 		ws.connected = true
+		ws.ready <- true
 		go ws.listen()
 	}
 }
 
 func (ws *WS) OnDisconnect() {
 	ws.connected = false
+	ws.ready <- false
 }
 
 func (ws *WS) listen() {
@@ -92,7 +100,7 @@ func (ws *WS) ReadMessage() (gjson.Result, error) {
 		return gjson.Result{}, err
 	}
 	if eventJson.Get(cq.META_EVENT_TYPE).String() != cq.META_EVENT_TYPE_HEARTBEAT {
-		ws.log.Debug("receive message", zap.Any("message", eventJson.String()))
+		//ws.log.Debug("receive message", zap.Any("message", eventJson.String()))
 	}
 	return eventJson, nil
 }

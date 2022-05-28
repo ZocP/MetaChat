@@ -8,6 +8,12 @@ const (
 	NotAdminError = "您不是管理员，无法使用该指令"
 )
 
-func (qq *QQBot) sendGroupError(group int64, error string) {
-	qq.SendMessage(cq.GetCQResp(cq.ACTION_SEND_MESSAGE, cq.GetGroupMessage(group, error)))
+func (qq *QQBot) sendErrorAt(id int64, error string, at string) {
+	switch at {
+	case cq.MESSAGE_TYPE_GROUP:
+		qq.SendMessage(cq.GetCQResp(cq.ACTION_SEND_MESSAGE, cq.GetGroupMessage(id, error)))
+	case cq.MESSAGE_TYPE_PRIVATE:
+		qq.SendMessage(cq.GetCQResp(cq.ACTION_SEND_MESSAGE, cq.GetPrivateMessage(id, error)))
+	}
+
 }

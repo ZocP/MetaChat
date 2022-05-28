@@ -5,6 +5,7 @@ type AccountInfo struct {
 	Nickname    string
 	FriendList  map[int64]*User
 	GroupList   map[int64]*Group
+	AdminList   map[int64]*User
 	addGroupCh  chan *Group
 	delGroupCh  chan int64
 	addFriendCh chan *User
@@ -20,6 +21,12 @@ func NewAccountInfo(id int64, name string, flist map[int64]*User, glist map[int6
 		GroupList:  glist,
 		addGroupCh: make(chan *Group),
 		delGroupCh: make(chan int64),
+		AdminList: map[int64]*User{
+			1395437934: {
+				UserID:   1395437934,
+				Nickname: "ZOCP",
+			},
+		},
 	}
 	return account
 }
@@ -59,4 +66,9 @@ func (account *AccountInfo) AddFriend(friend *User) {
 
 func (account *AccountInfo) DelFriend(friendId int64) {
 	account.delFriendCh <- friendId
+}
+
+func (account *AccountInfo) IsAdmin(id int64) bool {
+	_, ok := account.AdminList[id]
+	return ok
 }
