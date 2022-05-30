@@ -126,6 +126,9 @@ func ParseParamAll(m map[string][]string) (Param, error) {
 		num    int
 	)
 	for k, v := range m {
+		if len(v) == 0 {
+			continue
+		}
 		switch k {
 		case "r18":
 			result.Adult, err = strconv.Atoi(v[0])
