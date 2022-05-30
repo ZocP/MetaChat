@@ -1,6 +1,7 @@
 package main
 
 import (
+	"MetaChat/app"
 	"MetaChat/app/metaChat"
 	"MetaChat/pkg/http"
 	"MetaChat/pkg/log"
@@ -24,7 +25,7 @@ func initPackages() fx.Option {
 	)
 }
 
-func lc(lifecycle fx.Lifecycle, server *http.Server, app *metaChat.MetaChat, handler *signal.StopHandler) {
+func lc(lifecycle fx.Lifecycle, server *http.Server, app app.APP, handler *signal.StopHandler) {
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			if err := app.OnStart(); err != nil {

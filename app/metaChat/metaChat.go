@@ -1,6 +1,7 @@
 package metaChat
 
 import (
+	"MetaChat/app"
 	"MetaChat/app/metaChat/config"
 	"MetaChat/app/metaChat/minecraft"
 	"MetaChat/app/metaChat/qqBot"
@@ -56,7 +57,7 @@ func (meta *MetaChat) Listen() error {
 	}
 }
 
-func NewMetaChat(log *zap.Logger, viper *viper.Viper, mc *minecraft.MCEventHandler, stop *signal.StopHandler, bot *qqBot.QQBot) *MetaChat {
+func NewMetaChat(log *zap.Logger, viper *viper.Viper, mc *minecraft.MCEventHandler, stop *signal.StopHandler, bot *qqBot.QQBot) app.APP {
 	return &MetaChat{
 		log:       log,
 		viper:     viper,

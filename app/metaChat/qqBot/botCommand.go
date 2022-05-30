@@ -45,7 +45,7 @@ func (qq *QQBot) onRandomPics(msg gjson.Result, cmd commands.Command, at string)
 		})
 	} else {
 		param, err := lolicon.ParseParam(cmd.Param)
-		if at == cq.MESSAGE_TYPE_PRIVATE && qq.IsAdmin(msg.Get(cq.USER_ID).Int()) {
+		if qq.IsAdmin(msg.Get(cq.USER_ID).Int()) {
 			param, err = lolicon.ParseParamAll(cmd.Param)
 		}
 		if err != nil {
@@ -78,14 +78,12 @@ func (qq *QQBot) onRandomPics(msg gjson.Result, cmd commands.Command, at string)
 		qq.RegisterEchoHandler(echo)
 		qq.SendMessage(event)
 		qq.log.Debug("cq code sent", zap.Any("cqCode", cqCode))
-		go func() {
-			status := qq.WaitForResult(echo)
-			if status.Get(cq.STATUS).String() == cq.STATUS_ERROR {
-				fmtmsg := fmt.Sprintf("发送涩图失败，也许是太色了，但是可以从下面的链接访问\n%s", link)
-				qq.SendMessage(cq.GetCQResp(cq.ACTION_SEND_MESSAGE, cq.GetMessageAt(ID, fmtmsg, at)))
-				qq.log.Debug("error while sending message", zap.Any("status", status))
-			}
-		}()
+		status := qq.WaitForResult(echo)
+		if status.Get(cq.STATUS).String() == cq.STATUS_ERROR {
+			fmtmsg := fmt.Sprintf("发送涩图失败，也许是太色了，但是可以从下面的链接访问\n%s", link)
+			qq.SendMessage(cq.GetCQResp(cq.ACTION_SEND_MESSAGE, cq.GetMessageAt(ID, fmtmsg, at)))
+			qq.log.Debug("error while sending message", zap.Any("status", status))
+		}
 		return true
 	})
 }
