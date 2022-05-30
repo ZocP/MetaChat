@@ -18,13 +18,13 @@ type Config struct {
 	Stdout     bool
 }
 
-func NewConfig(v *viper.Viper) (Config, error) {
+func NewConfig(v *viper.Viper) (*Config, error) {
 	var (
 		err error
-		o   = Config{}
+		o   = &Config{}
 	)
 	if err = v.UnmarshalKey("log", o); err != nil {
-		return Config{}, err
+		return nil, err
 	}
 
 	return o, err
@@ -34,7 +34,7 @@ func Provide() fx.Option {
 	return fx.Provide(NewConfig, NewLogger)
 }
 
-func NewLogger(cfg Config) *zap.Logger {
+func NewLogger(cfg *Config) *zap.Logger {
 	var coreArr []zapcore.Core
 
 	//获取编码器
