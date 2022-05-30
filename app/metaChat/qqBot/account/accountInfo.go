@@ -3,16 +3,16 @@ package account
 type AccountInfo struct {
 	AccountId   int64
 	Nickname    string
-	FriendList  map[int64]*User
+	FriendList  map[string]*User
 	GroupList   map[int64]*Group
-	AdminList   map[int64]*User
+	AdminList   map[string]*User
 	addGroupCh  chan *Group
 	delGroupCh  chan int64
 	addFriendCh chan *User
-	delFriendCh chan int64
+	delFriendCh chan string
 }
 
-func NewAccountInfo(id int64, name string, flist map[int64]*User, glist map[int64]*Group) *AccountInfo {
+func NewAccountInfo(id int64, name string, flist map[string]*User, glist map[int64]*Group) *AccountInfo {
 
 	account := &AccountInfo{
 		AccountId:  id,
@@ -21,9 +21,9 @@ func NewAccountInfo(id int64, name string, flist map[int64]*User, glist map[int6
 		GroupList:  glist,
 		addGroupCh: make(chan *Group),
 		delGroupCh: make(chan int64),
-		AdminList: map[int64]*User{
-			1395437934: {
-				UserID:   1395437934,
+		AdminList: map[string]*User{
+			"1395437934": {
+				UserID:   "1395437934",
 				Nickname: "ZOCP",
 			},
 		},
@@ -64,13 +64,11 @@ func (account *AccountInfo) AddFriend(friend *User) {
 	account.addFriendCh <- friend
 }
 
-func (account *AccountInfo) DelFriend(friendId int64) {
+func (account *AccountInfo) DelFriend(friendId string) {
 	account.delFriendCh <- friendId
 }
 
-func (account *AccountInfo) IsAdmin(id int64) bool {
-	if id == 1395437934 {
-		return true
-	}
-	return false
+func (account *AccountInfo) IsAdmin(id string) bool {
+	_, ok := account.AdminList[id]
+	return ok
 }

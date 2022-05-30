@@ -1,0 +1,13 @@
+accountTypes:
+  - typeName: superadmin
+    allowCommands:
+      - 色图
+      - 测试
+  - typeName: admin
+    allowCommands:
+      - 测试
+commands:
+  - commandsName: 色图
+    config: ''
+  - commandsName: 测试
+    config: ''

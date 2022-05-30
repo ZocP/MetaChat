@@ -7,10 +7,11 @@ import (
 	"MetaChat/app/metaChat/qqBot/io/ws"
 	"MetaChat/pkg/cq"
 	"MetaChat/pkg/signal"
+	"time"
+
 	"github.com/tidwall/gjson"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"time"
 )
 
 type QQBot struct {
@@ -171,11 +172,11 @@ func (qq *QQBot) initAccountInfo() {
 	qq.RegisterEchoHandler(friendID)
 	friendResult := qq.WaitForResult(friendID)
 
-	friendList := make(map[int64]*account.User)
+	friendList := make(map[string]*account.User)
 
 	friendResult.Get(cq.DATA).ForEach(func(key, value gjson.Result) bool {
-		friendList[value.Get(cq.USER_ID).Int()] = &account.User{
-			UserID:   value.Get(cq.USER_ID).Int(),
+		friendList[value.Get(cq.USER_ID).String()] = &account.User{
+			UserID:   value.Get(cq.USER_ID).String(),
 			Nickname: value.Get(cq.NICKNAME).String(),
 		}
 		return true
