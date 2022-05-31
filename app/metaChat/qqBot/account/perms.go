@@ -2,6 +2,7 @@ package account
 
 import (
 	"fmt"
+	"go.uber.org/zap"
 
 	"github.com/spf13/viper"
 )
@@ -10,21 +11,20 @@ type Command interface {
 	GetName() string
 }
 
-type AdminUser interface {
+type User interface {
 	GetUserID() string
 	GetNickName() string
 	GetAccountType() string
 }
 
-type accountTypeMap map[string]Perms
+type accountPermissions map[string]Permissions
 
-type Perms map[string]interface{}
+type Permissions map[string]interface{}
 
-func (perms Perms) AllowCall(cmd string) bool {
-	if _, ok := perms[cmd]; ok {
+func (perms Permissions) AllowExecuteParam(param string) bool {
+	if _, ok := perms[param]; ok {
 		return true
 	}
-
 	return false
 }
 
@@ -39,43 +39,42 @@ type permsConfig struct {
 	} `json:"commands"`
 }
 
-type PermMgr struct {
-	accountTypeMap accountTypeMap
-	permsStorage   AdminPermsStorage
+type PermissionManager struct {
+	log               *zap.Logger
+	accountTypeMap    accountPermissions
+	permissionStorage UserPermissionStorage
 }
 
-func (mgr *PermMgr) Check(cmd Command, admin AdminUser) bool {
-	if perms, ok := mgr.accountTypeMap[admin.GetAccountType()]; ok {
-		return perms.AllowCall(cmd.GetName())
+func (mgr *PermissionManager) CheckExecutable(cmd Command, user User) bool {
+	if perms, ok := mgr.accountTypeMap[user.GetAccountType()]; ok {
+		return perms.AllowExecuteParam(cmd.GetName())
 	}
-
 	return false
 }
 
-func (mgr *PermMgr) CheckByUserID(cmd Command, userid string) bool {
-	if adminUser, err := mgr.permsStorage.ReadPerms(userid); err != nil {
-		// TODO: logger err
+func (mgr *PermissionManager) CheckExecutableByUserID(cmd Command, userid string) bool {
+	if user, err := mgr.permissionStorage.GetUser(userid); err != nil {
+		mgr.log.Error("get user failed", zap.Error(err))
 		return false
-	} else if adminUser == nil {
+	} else if user == nil {
 		return false
 	} else {
-		return mgr.Check(cmd, adminUser)
+		return mgr.CheckExecutable(cmd, user)
 	}
 }
 
-func NewPermMgr(permsConfigFilepath string, permsStorage AdminPermsStorage) (*PermMgr, error) {
+func NewPermissionManager(permsConfigFilepath string, permsStorage UserPermissionStorage) (*PermissionManager, error) {
 	typeMap, err := parsePerm(permsConfigFilepath)
 	if err != nil {
 		return nil, err
 	}
-
-	return &PermMgr{
-		accountTypeMap: typeMap,
-		permsStorage:   permsStorage,
+	return &PermissionManager{
+		accountTypeMap:    typeMap,
+		permissionStorage: permsStorage,
 	}, nil
 }
 
-func parsePerm(permsConfigFilepath string) (accountTypeMap, error) {
+func parsePerm(permsConfigFilepath string) (accountPermissions, error) {
 	v := viper.New()
 	v.SetConfigType("yaml")
 	v.SetConfigFile(permsConfigFilepath)
@@ -95,9 +94,9 @@ func parsePerm(permsConfigFilepath string) (accountTypeMap, error) {
 		commandMap[command.CommandsName] = command.Config
 	}
 
-	typeMap := make(accountTypeMap)
+	typeMap := make(accountPermissions)
 	for _, accountInfo := range permsCfg.AccountTypes {
-		perms := make(Perms)
+		perms := make(Permissions)
 		for _, cmd := range accountInfo.AllowCommands {
 			if cfg, ok := commandMap[cmd]; ok {
 				perms[cmd] = cfg

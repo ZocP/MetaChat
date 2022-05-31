@@ -47,7 +47,6 @@ func (meta *MetaChat) Listen() error {
 	for {
 		select {
 		case done := <-meta.stopCh:
-
 			done <- true
 		case cqMsgJson := <-qqMsgCh:
 			go meta.handleCQMessage(cqMsgJson)

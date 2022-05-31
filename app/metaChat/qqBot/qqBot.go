@@ -172,10 +172,10 @@ func (qq *QQBot) initAccountInfo() {
 	qq.RegisterEchoHandler(friendID)
 	friendResult := qq.WaitForResult(friendID)
 
-	friendList := make(map[string]*account.User)
+	friendList := make(map[string]*account.ImplementedUser)
 
 	friendResult.Get(cq.DATA).ForEach(func(key, value gjson.Result) bool {
-		friendList[value.Get(cq.USER_ID).String()] = &account.User{
+		friendList[value.Get(cq.USER_ID).String()] = &account.ImplementedUser{
 			UserID:   value.Get(cq.USER_ID).String(),
 			Nickname: value.Get(cq.NICKNAME).String(),
 		}

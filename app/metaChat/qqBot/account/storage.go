@@ -5,17 +5,17 @@ import (
 	"os"
 )
 
-type AdminPermsStorage interface {
-	ReadPerms(userid string) (AdminUser, error)
-	WritePerms(userid string, adminUser AdminUser) error
+type UserPermissionStorage interface {
+	GetUser(userid string) (*ImplementedUser, error)
+	SetPermission(userid string, adminUser *ImplementedUser) error
 }
 
 type PermsCSVImpl struct {
 	filepath     string
-	userPermsMap map[string]AdminUser
+	userPermsMap map[string]ImplementedUser
 }
 
-func NewPermsCSVImpl(adminCSVFilepath string) (AdminPermsStorage, error) {
+func NewPermsCSVImpl(adminCSVFilepath string) (UserPermissionStorage, error) {
 	file, err := os.Open(adminCSVFilepath)
 	if err != nil {
 		return nil, err
@@ -28,9 +28,9 @@ func NewPermsCSVImpl(adminCSVFilepath string) (AdminPermsStorage, error) {
 	}
 
 	// TODO: 优化初始化 增加健壮性
-	perms := make(map[string]AdminUser)
+	perms := make(map[string]ImplementedUser)
 	for _, row := range all {
-		perms[row[1]] = User{
+		perms[row[1]] = ImplementedUser{
 			UserID:      row[1],
 			Nickname:    row[0],
 			AccountType: row[2],
@@ -43,7 +43,7 @@ func NewPermsCSVImpl(adminCSVFilepath string) (AdminPermsStorage, error) {
 	}, nil
 }
 
-func (csvStorage *PermsCSVImpl) ReadPerms(userid string) (AdminUser, error) {
+func (csvStorage *PermsCSVImpl) ReadPerms(userid string) (ImplementedUser, error) {
 	if adminUser, ok := csvStorage.userPermsMap[userid]; ok {
 		return adminUser, nil
 	}
@@ -51,7 +51,7 @@ func (csvStorage *PermsCSVImpl) ReadPerms(userid string) (AdminUser, error) {
 	return nil, nil
 }
 
-func (csvStorage *PermsCSVImpl) WritePerms(userid string, adminUser AdminUser) error {
+func (csvStorage *PermsCSVImpl) WritePerms(userid string, adminUser ImplementedUser) error {
 	csvStorage.userPermsMap[userid] = adminUser
 
 	all := make([][]string, 0, 10)

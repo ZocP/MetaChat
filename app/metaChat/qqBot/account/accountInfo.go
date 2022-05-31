@@ -3,16 +3,16 @@ package account
 type AccountInfo struct {
 	AccountId   int64
 	Nickname    string
-	FriendList  map[string]*User
+	FriendList  map[string]*ImplementedUser
 	GroupList   map[int64]*Group
-	AdminList   map[string]*User
+	AdminList   map[string]*ImplementedUser
 	addGroupCh  chan *Group
 	delGroupCh  chan int64
-	addFriendCh chan *User
+	addFriendCh chan *ImplementedUser
 	delFriendCh chan string
 }
 
-func NewAccountInfo(id int64, name string, flist map[string]*User, glist map[int64]*Group) *AccountInfo {
+func NewAccountInfo(id int64, name string, flist map[string]*ImplementedUser, glist map[int64]*Group) *AccountInfo {
 
 	account := &AccountInfo{
 		AccountId:  id,
@@ -21,7 +21,7 @@ func NewAccountInfo(id int64, name string, flist map[string]*User, glist map[int
 		GroupList:  glist,
 		addGroupCh: make(chan *Group),
 		delGroupCh: make(chan int64),
-		AdminList: map[string]*User{
+		AdminList: map[string]*ImplementedUser{
 			"1395437934": {
 				UserID:   "1395437934",
 				Nickname: "ZOCP",
@@ -60,7 +60,7 @@ func (account *AccountInfo) DelGroup(groupId int64) {
 	account.delGroupCh <- groupId
 }
 
-func (account *AccountInfo) AddFriend(friend *User) {
+func (account *AccountInfo) AddFriend(friend *ImplementedUser) {
 	account.addFriendCh <- friend
 }
 

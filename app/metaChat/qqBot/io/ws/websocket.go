@@ -101,6 +101,10 @@ func (ws *WS) ReadMessage() {
 					ws.ready <- false
 					break
 				}
+				ws.log.Info("connection abnormally closed", zap.Error(err))
+				ws.connected = false
+				ws.ready <- false
+				break
 			}
 			ws.rawCh <- raw
 		}

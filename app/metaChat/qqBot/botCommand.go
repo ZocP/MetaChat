@@ -45,7 +45,7 @@ func (qq *QQBot) onRandomPics(msg gjson.Result, cmd commands.Command, at string)
 		})
 	} else {
 		param, err := lolicon.ParseParam(cmd.Param)
-		if qq.IsAdmin(msg.Get(cq.USER_ID).Int()) {
+		if qq.IsAdmin(msg.Get(cq.USER_ID).String()) {
 			param, err = lolicon.ParseParamAll(cmd.Param)
 		}
 		if err != nil {
