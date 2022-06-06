@@ -1,18 +1,16 @@
-package account
+package storage
 
 import (
+	"MetaChat/pkg/qqBot/pkg/user"
 	"encoding/csv"
 	"os"
 )
 
-type UserPermissionStorage interface {
-	GetUser(userid string) (*ImplementedUser, error)
-	SetPermission(userid string, adminUser *ImplementedUser) error
-}
+
 
 type PermsCSVImpl struct {
 	filepath     string
-	userPermsMap map[string]ImplementedUser
+	userMap map[string]*user.User
 }
 
 func NewPermsCSVImpl(adminCSVFilepath string) (UserPermissionStorage, error) {
@@ -28,12 +26,10 @@ func NewPermsCSVImpl(adminCSVFilepath string) (UserPermissionStorage, error) {
 	}
 
 	// TODO: 优化初始化 增加健壮性
-	perms := make(map[string]ImplementedUser)
+	perms := make(map[string]*user.User)
 	for _, row := range all {
-		perms[row[1]] = ImplementedUser{
-			UserID:      row[1],
-			Nickname:    row[0],
-			AccountType: row[2],
+		accountType := row[2]
+		perms[row[1]] = user.NewUser(row[1],row[2].(string).(user.AccountType),row[0])
 		}
 	}
 
@@ -43,16 +39,15 @@ func NewPermsCSVImpl(adminCSVFilepath string) (UserPermissionStorage, error) {
 	}, nil
 }
 
-func (csvStorage *PermsCSVImpl) ReadPerms(userid string) (ImplementedUser, error) {
+func (csvStorage *PermsCSVImpl) GetUser(userid string) (user.User, error) {
 	if adminUser, ok := csvStorage.userPermsMap[userid]; ok {
 		return adminUser, nil
 	}
-
 	return nil, nil
 }
 
-func (csvStorage *PermsCSVImpl) WritePerms(userid string, adminUser ImplementedUser) error {
-	csvStorage.userPermsMap[userid] = adminUser
+func (csvStorage *PermsCSVImpl) WriteUser(userid string, u, *user.User) error {
+	csvStorage.userPermsMap[userid] = u
 
 	all := make([][]string, 0, 10)
 	for _, user := range csvStorage.userPermsMap {

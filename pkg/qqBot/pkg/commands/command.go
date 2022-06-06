@@ -5,8 +5,6 @@ import (
 	"strings"
 )
 
-//map[flag][]values
-
 type Command struct {
 	Name     string
 	Param    map[string][]string
@@ -39,4 +37,21 @@ func UnpackCommand(cmd string) Command {
 		Raw:      cmd,
 		HasParam: true,
 	}
+}
+
+//getter
+func (c *Command) GetName() string {
+	return c.Name
+}
+
+func (c *Command) GetRaw() string {
+	return c.Raw
+}
+
+func (c *Command) GetParam() map[string][]string {
+	return c.Param
+}
+
+func (c *Command) HasParams() bool {
+	return c.HasParam
 }
