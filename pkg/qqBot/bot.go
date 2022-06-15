@@ -12,30 +12,22 @@ import (
 )
 
 type QQBot struct {
-	log    *zap.Logger
-	config *config.Config
-
-	handlerAddCh chan EventHandler
-	stopCh       chan bool
-	connReadyCh  <-chan bool
-	throwCh      chan gjson.Result
-
-	eventHandlers []EventHandler
-	ctx           Context
-
-	IOHandler io.IOHandler
-	isReady   bool
+	Context
+	log         *zap.Logger
+	config      *config.Config
+	stopCh      chan bool
+	connReadyCh <-chan bool
+	IOHandler   io.IOHandler
+	isReady     bool
 }
 
 func NewQQBot(log *zap.Logger, config *config.Config, handler io.IOHandler, stopHandler *signal.StopHandler) *QQBot {
 	bot := &QQBot{
-		log:           log,
-		config:        config,
-		stopCh:        make(chan bool),
-		IOHandler:     handler,
-		throwCh:       make(chan gjson.Result),
-		isReady:       false,
-		eventHandlers: EventHandlers,
+		log:       log,
+		config:    config,
+		stopCh:    make(chan bool),
+		IOHandler: handler,
+		isReady:   false,
 	}
 	bot.OnStart()
 	stopHandler.Add(bot)
@@ -44,6 +36,7 @@ func NewQQBot(log *zap.Logger, config *config.Config, handler io.IOHandler, stop
 
 func (qq *QQBot) OnStart() {
 	qq.connReadyCh = qq.IOHandler.GetOnReadyCh()
+	qq.log.Info("framework started, waiting for connection ready")
 	msgCh := qq.IOHandler.GetMessageCh()
 	go func() {
 		for {
@@ -51,6 +44,7 @@ func (qq *QQBot) OnStart() {
 			case ready := <-qq.connReadyCh:
 				if ready {
 					qq.isReady = true
+					qq.log.Info("connection ready!")
 					go qq.initContext()
 				} else {
 					qq.isReady = false
@@ -58,13 +52,12 @@ func (qq *QQBot) OnStart() {
 			case msg := <-msgCh:
 				if qq.isReady {
 					qq.onMessage(msg)
+					continue
 				}
 				qq.log.Info("receive message but bot not ready yet", zap.Any("msg", msg))
 			case <-qq.stopCh:
 				qq.notifyStop()
 				break
-			case handler := <-qq.handlerAddCh:
-				qq.eventHandlers = append(qq.eventHandlers, handler)
 			}
 		}
 	}()
@@ -80,19 +73,10 @@ func (qq *QQBot) sendMessage(msg cq.CQResp) {
 	qq.IOHandler.SendMessage(msg)
 }
 
-func (qq *QQBot) GetThrow() <-chan gjson.Result {
-	return qq.throwCh
-}
-
-//将需要上层MC处理的消息放入channel，等待上层MetaChat处理
-func (qq *QQBot) throw(msg gjson.Result) {
-	qq.throwCh <- msg
-}
-
 func (qq *QQBot) onMessage(msg gjson.Result) {
-	for _, eh := range qq.eventHandlers {
+	for _, eh := range EventHandlers {
 		if eh != nil {
-			eh(qq.ctx, msg)
+			eh(qq, msg)
 		}
 	}
 }
@@ -103,13 +87,7 @@ func (qq *QQBot) notifyStop() {
 }
 
 func (qq *QQBot) initContext() {
-	qq.ctx = NewCtx(qq)
-}
-
-func (qq *QQBot) handlerAdder(handler ...EventHandler) {
-	for _, v := range handler {
-		qq.handlerAddCh <- v
-	}
+	qq.Context = NewCtx(qq)
 }
 
 func Provide() fx.Option {

@@ -7,7 +7,6 @@ import (
 
 type Context interface {
 	SendMessage(msg cq.CQResp)
-	Throw(msg gjson.Result)
 	GetAccountInfo() interface{}
 }
 

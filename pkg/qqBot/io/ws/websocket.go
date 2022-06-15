@@ -1,9 +1,9 @@
 package ws
 
 import (
-	"MetaChat/app/metaChat/qqBot/config"
-	"MetaChat/app/metaChat/qqBot/io"
 	"MetaChat/pkg/cq"
+	"MetaChat/pkg/qqBot/config"
+	"MetaChat/pkg/qqBot/io"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/tidwall/gjson"
@@ -84,7 +84,10 @@ func (ws *WS) listen() {
 			ws.log.Info("websocket closed")
 			return
 		case raw := <-ws.rawCh:
-			ws.messageCh <- gjson.Parse(string(raw))
+			data := gjson.Parse(string(raw))
+			if data.Get(cq.META_EVENT_TYPE).String() != cq.META_EVENT_TYPE_HEARTBEAT {
+				ws.messageCh <- data
+			}
 		}
 	}
 }
