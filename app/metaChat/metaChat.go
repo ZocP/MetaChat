@@ -19,14 +19,11 @@ type MetaChat struct {
 
 	stopCh chan chan bool
 	stop   *signal.StopHandler
-
-	qqBot *qqBot.QQBot
 }
 
 func (meta *MetaChat) OnStart() error {
 	qqBot.AddHandler(qq.MessageHandler)
 	meta.stop.Add(meta)
-	meta.qqBot.OnStart()
 	go func() {
 		if err := meta.Listen(); err != nil {
 			meta.log.Error("error while listening", zap.Error(err))
@@ -56,13 +53,13 @@ func (meta *MetaChat) Listen() error {
 	}
 }
 
-func NewMetaChat(log *zap.Logger, viper *viper.Viper, stop *signal.StopHandler, bot *qqBot.QQBot) app.APP {
+func NewMetaChat(log *zap.Logger, viper *viper.Viper, stop *signal.StopHandler, qq *qq.QQ) app.APP {
 	return &MetaChat{
 		log:    log,
 		viper:  viper,
 		stopCh: make(chan chan bool),
 		stop:   stop,
-		qqBot:  bot,
+		qqBot:  qq,
 	}
 }
 
@@ -70,6 +67,6 @@ func Provide() fx.Option {
 	return fx.Options(
 		fx.Provide(NewMetaChat),
 		router.Provide(),
-		fx.Options(qqBot.Provide(), minecraft.Provide()),
+		fx.Options(qqBot.Provide()),
 	)
 }

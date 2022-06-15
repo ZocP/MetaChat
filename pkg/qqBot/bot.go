@@ -14,11 +14,11 @@ import (
 type QQBot struct {
 	log    *zap.Logger
 	config *config.Config
-	stop   *signal.StopHandler
 
-	stopCh      chan bool
-	connReadyCh <-chan bool
-	throwCh     chan gjson.Result
+	handlerAddCh chan EventHandler
+	stopCh       chan bool
+	connReadyCh  <-chan bool
+	throwCh      chan gjson.Result
 
 	eventHandlers []EventHandler
 	ctx           Context
@@ -28,20 +28,21 @@ type QQBot struct {
 }
 
 func NewQQBot(log *zap.Logger, config *config.Config, handler io.IOHandler, stopHandler *signal.StopHandler) *QQBot {
-	return &QQBot{
+	bot := &QQBot{
 		log:           log,
 		config:        config,
-		stop:          stopHandler,
 		stopCh:        make(chan bool),
 		IOHandler:     handler,
 		throwCh:       make(chan gjson.Result),
 		isReady:       false,
 		eventHandlers: EventHandlers,
 	}
+	bot.OnStart()
+	stopHandler.Add(bot)
+	return bot
 }
 
 func (qq *QQBot) OnStart() {
-	qq.stop.Add(qq)
 	qq.connReadyCh = qq.IOHandler.GetOnReadyCh()
 	msgCh := qq.IOHandler.GetMessageCh()
 	go func() {
@@ -57,12 +58,13 @@ func (qq *QQBot) OnStart() {
 			case msg := <-msgCh:
 				if qq.isReady {
 					qq.onMessage(msg)
-					break
 				}
 				qq.log.Info("receive message but bot not ready yet", zap.Any("msg", msg))
 			case <-qq.stopCh:
 				qq.notifyStop()
 				break
+			case handler := <-qq.handlerAddCh:
+				qq.eventHandlers = append(qq.eventHandlers, handler)
 			}
 		}
 	}()
@@ -102,6 +104,12 @@ func (qq *QQBot) notifyStop() {
 
 func (qq *QQBot) initContext() {
 	qq.ctx = NewCtx(qq)
+}
+
+func (qq *QQBot) handlerAdder(handler ...EventHandler) {
+	for _, v := range handler {
+		qq.handlerAddCh <- v
+	}
 }
 
 func Provide() fx.Option {
