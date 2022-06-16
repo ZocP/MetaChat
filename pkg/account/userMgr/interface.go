@@ -1,9 +1,9 @@
 package userMgr
 
 import (
-	"MetaChat/pkg/qqBot/account/status"
-	"MetaChat/pkg/qqBot/pkg/commands"
-	"MetaChat/pkg/qqBot/pkg/user"
+	"MetaChat/pkg/account/pkg/commands"
+	"MetaChat/pkg/account/pkg/user"
+	"MetaChat/pkg/account/status"
 )
 
 type IUserManager interface {

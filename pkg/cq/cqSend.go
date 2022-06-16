@@ -1,6 +1,7 @@
 package cq
 
 import (
+	"github.com/tidwall/gjson"
 	"strconv"
 	"time"
 )
@@ -76,6 +77,16 @@ func GetGroupMessage(groupID int64, message string) CQNormalMessage {
 		Message:     message,
 		AutoEscape:  false,
 	}
+}
+
+func GetMessageQuick(msg gjson.Result, message string) CQNormalMessage {
+	switch msg.Get(MESSAGE_TYPE).String() {
+	case MESSAGE_TYPE_GROUP:
+		return GetGroupMessage(msg.Get(GROUP_ID).Int(), message)
+	case MESSAGE_TYPE_PRIVATE:
+		return GetPrivateMessage(msg.Get(USER_ID).Int(), message)
+	}
+	panic("not implemented")
 }
 
 func GetMessageAt(id int64, message string, at string) CQNormalMessage {

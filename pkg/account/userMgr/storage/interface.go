@@ -1,6 +1,6 @@
 package storage
 
-import "MetaChat/pkg/qqBot/pkg/user"
+import "MetaChat/pkg/account/pkg/user"
 
 type UserPermissionStorage interface {
 	GetUser(userid string) (user.User, error)

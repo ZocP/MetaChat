@@ -19,9 +19,11 @@ type MetaChat struct {
 	config *config.Config
 
 	qqMsgCh <-chan gjson.Result
-	stopCh  chan chan bool
-	stop    *signal.StopHandler
-	qq      *qq.QQ
+	mcMsgCh <-chan gjson.Result
+
+	stopCh chan chan bool
+	stop   *signal.StopHandler
+	qq     *qq.QQ
 }
 
 func (meta *MetaChat) OnStart() error {
@@ -43,14 +45,13 @@ func (meta *MetaChat) OnStop() error {
 }
 
 func (meta *MetaChat) Listen() error {
+
 	for {
 		select {
 		case done := <-meta.stopCh:
 			done <- true
 		case cqMsgJson := <-meta.qqMsgCh:
 			go meta.handleCQMessage(cqMsgJson)
-			//case mcMsgJson := <-meta.mcReceiveCh:
-			//	eventBridge.LogCQEvent(meta.log, mcMsgJson)
 		}
 	}
 }

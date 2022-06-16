@@ -38,6 +38,7 @@ func (qq *QQBot) OnStart() {
 	qq.connReadyCh = qq.IOHandler.GetOnReadyCh()
 	qq.log.Info("framework started, waiting for connection ready")
 	msgCh := qq.IOHandler.GetMessageCh()
+	qq.initContext()
 	go func() {
 		for {
 			select {
@@ -45,7 +46,6 @@ func (qq *QQBot) OnStart() {
 				if ready {
 					qq.isReady = true
 					qq.log.Info("connection ready!")
-					go qq.initContext()
 				} else {
 					qq.isReady = false
 				}
@@ -76,7 +76,7 @@ func (qq *QQBot) sendMessage(msg cq.CQResp) {
 func (qq *QQBot) onMessage(msg gjson.Result) {
 	for _, eh := range EventHandlers {
 		if eh != nil {
-			eh(qq, msg)
+			go eh(qq, msg)
 		}
 	}
 }
