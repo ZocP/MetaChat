@@ -66,7 +66,6 @@ func (s *Server) Start() error {
 			return
 		}
 	}()
-
 	return nil
 }
 
@@ -83,5 +82,16 @@ func (s *Server) Stop() error {
 //提供server module
 
 func Provide() fx.Option {
-	return fx.Provide(NewConfig, NewRouter, NewServer)
+	return fx.Options(fx.Provide(NewConfig, NewRouter, NewServer), fx.Invoke(lc))
+}
+
+func lc(server *Server, lifecycle fx.Lifecycle) {
+	lifecycle.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			return server.Start()
+		},
+		OnStop: func(ctx context.Context) error {
+			return server.Stop()
+		},
+	})
 }

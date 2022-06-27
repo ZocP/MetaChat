@@ -86,7 +86,7 @@ func GetMessageQuick(msg gjson.Result, message string) CQNormalMessage {
 	case MESSAGE_TYPE_PRIVATE:
 		return GetPrivateMessage(msg.Get(USER_ID).Int(), message)
 	}
-	panic("not implemented")
+	return GetNormalMessage(msg.Get(MESSAGE_TYPE).String(), msg.Get(USER_ID).Int(), msg.Get(GROUP_ID).Int(), message, false)
 }
 
 func GetMessageAt(id int64, message string, at string) CQNormalMessage {

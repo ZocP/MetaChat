@@ -4,9 +4,9 @@ import (
 	"MetaChat/app"
 	"MetaChat/app/metaChat/config"
 	"MetaChat/app/metaChat/qq"
-	"MetaChat/app/metaChat/router"
 	"MetaChat/pkg/qqBot"
 	"MetaChat/pkg/signal"
+	"context"
 	"github.com/spf13/viper"
 	"github.com/tidwall/gjson"
 	"go.uber.org/fx"
@@ -70,7 +70,16 @@ func NewMetaChat(log *zap.Logger, viper *viper.Viper, stop *signal.StopHandler, 
 func Provide() fx.Option {
 	return fx.Options(
 		fx.Provide(NewMetaChat),
-		router.Provide(),
 		fx.Options(qqBot.Provide(), qq.Provide()),
+		fx.Invoke(func(meta app.APP, lc fx.Lifecycle) {
+			lc.Append(fx.Hook{
+				OnStart: func(ctx context.Context) error {
+					return meta.OnStart()
+				},
+				OnStop: func(ctx context.Context) error {
+					return meta.OnStop()
+				},
+			})
+		}),
 	)
 }

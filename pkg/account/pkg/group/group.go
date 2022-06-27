@@ -3,10 +3,9 @@ package group
 type GroupType string
 
 type Group struct {
-	GroupName  string    `json:"group_name"`
-	GroupID    string    `json:"group_id"`
-	GroupType  GroupType `json:"group_type"`
-	GroupUsers []string  `json:"group_users"`
+	GroupName  string   `json:"group_name"`
+	GroupID    string   `json:"group_id"`
+	GroupUsers []string `json:"group_users"`
 }
 
 //尽量避免直接使用fields
@@ -16,10 +15,6 @@ func (g *Group) GetName() string {
 
 func (g *Group) GetID() string {
 	return g.GroupID
-}
-
-func (g *Group) GetType() GroupType {
-	return g.GroupType
 }
 
 func (g *Group) GetUsers() []string {

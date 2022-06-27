@@ -2,10 +2,12 @@ package qqBot
 
 import (
 	"MetaChat/pkg/cq"
+	"MetaChat/pkg/cq/condition"
 	"MetaChat/pkg/qqBot/config"
 	"MetaChat/pkg/qqBot/io"
 	"MetaChat/pkg/qqBot/io/ws"
 	"MetaChat/pkg/signal"
+	"context"
 	"github.com/tidwall/gjson"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -21,7 +23,7 @@ type QQBot struct {
 	isReady     bool
 }
 
-func NewQQBot(log *zap.Logger, config *config.Config, handler io.IOHandler, stopHandler *signal.StopHandler) *QQBot {
+func NewQQBot(log *zap.Logger, config *config.Config, handler io.IOHandler, stopHandler *signal.StopHandler) Context {
 	bot := &QQBot{
 		log:       log,
 		config:    config,
@@ -29,7 +31,6 @@ func NewQQBot(log *zap.Logger, config *config.Config, handler io.IOHandler, stop
 		IOHandler: handler,
 		isReady:   false,
 	}
-	bot.OnStart()
 	stopHandler.Add(bot)
 	return bot
 }
@@ -51,7 +52,7 @@ func (qq *QQBot) OnStart() {
 				}
 			case msg := <-msgCh:
 				if qq.isReady {
-					qq.onMessage(msg)
+					go qq.onMessage(msg)
 					continue
 				}
 				qq.log.Info("receive message but bot not ready yet", zap.Any("msg", msg))
@@ -79,6 +80,16 @@ func (qq *QQBot) onMessage(msg gjson.Result) {
 			go eh(qq, msg)
 		}
 	}
+	ConditionHandlers.Range(func(key, value interface{}) bool {
+		if key.(*condition.Condition).Fit(msg) {
+			for _, eh := range value.([]ConditionHandler) {
+				if eh != nil {
+					go eh(qq, msg)
+				}
+			}
+		}
+		return true
+	})
 }
 
 func (qq *QQBot) notifyStop() {
@@ -95,5 +106,19 @@ func Provide() fx.Option {
 		NewQQBot,
 		ws.NewWS,
 		config.NewConfig,
-	))
+	),
+		fx.Invoke(lc),
+	)
+}
+
+func lc(lifecycle fx.Lifecycle, bot Context) {
+	lifecycle.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			bot.OnStart()
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			return nil
+		},
+	})
 }

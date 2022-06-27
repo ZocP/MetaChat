@@ -5,6 +5,7 @@ import (
 	"MetaChat/app/metaChat"
 	"MetaChat/pkg/http"
 	"MetaChat/pkg/log"
+	"MetaChat/pkg/router"
 	"MetaChat/pkg/signal"
 	"MetaChat/pkg/viper"
 	"context"
@@ -17,6 +18,14 @@ func main() {
 
 func Launch() {
 	fx.New(initPackages(), metaChat.Provide()).Run()
+	//qqBot.AddConditionHandler(condition.NewCondition(
+	//	map[string]string{
+	//		cq.SENDER_USERID: "1395437934",
+	//	},
+	//), func(ctx qqBot.Context, msg gjson.Result) {
+	//	ctx.SendMessage(cq.GetCQResp(cq.ACTION_SEND_MESSAGE, cq.GetMessageQuick(msg, "test")))
+	//})
+	//fx.New(initPackages(), qqBot.Provide()).Run()
 }
 
 func initPackages() fx.Option {
@@ -25,17 +34,14 @@ func initPackages() fx.Option {
 		log.Provide(),
 		signal.Provide(),
 		viper.Provide(),
-		fx.Invoke(lc),
+		router.Provide(),
 	)
 }
 
-func lc(lifecycle fx.Lifecycle, server *http.Server, app app.APP, handler *signal.StopHandler) {
+func lc(lifecycle fx.Lifecycle, app app.APP, handler *signal.StopHandler) {
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			if err := app.OnStart(); err != nil {
-				return err
-			}
-			return server.Start()
+			return app.OnStart()
 		},
 		OnStop: func(ctx context.Context) error {
 			handler.Stop()

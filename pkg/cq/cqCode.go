@@ -17,8 +17,8 @@ func (code CQCode) GetParam(key string) string {
 	return ""
 }
 
-func GetImageCQCode(imageId string) string {
-	return "[CQ:image,file=" + imageId + "]"
+func GetImageCQCode(imageUrl string) string {
+	return "[CQ:image,file=" + imageUrl + "]"
 }
 
 func ParseCQCode(code string) CQCode {

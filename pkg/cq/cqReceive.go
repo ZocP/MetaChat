@@ -44,4 +44,7 @@ const (
 	NOTICE_TYPE_GROUP_DECREASE = "group_reduce"
 
 	WORDING = "wording"
+
+	SENDER        = "sender"
+	SENDER_USERID = SENDER + "." + USER_ID
 )
