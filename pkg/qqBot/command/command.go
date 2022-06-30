@@ -1,17 +1,21 @@
-package commands
+package command
 
 import (
 	"regexp"
 	"strings"
 )
 
-//map[flag][]values
-
 type Command struct {
 	Name     string
 	Param    map[string][]string
 	Raw      string
+	RawParam string
 	HasParam bool
+}
+
+func IsCommand(cmd string) bool {
+	compiler := regexp.MustCompile("^//")
+	return compiler.MatchString(cmd)
 }
 
 func UnpackCommand(cmd string) Command {
@@ -37,6 +41,7 @@ func UnpackCommand(cmd string) Command {
 		Name:     params[0],
 		Param:    param,
 		Raw:      cmd,
+		RawParam: strings.Join(params[1:], " "),
 		HasParam: true,
 	}
 }

@@ -3,30 +3,32 @@ package metaChat
 import (
 	"MetaChat/app"
 	"MetaChat/app/metaChat/config"
-	"MetaChat/app/metaChat/minecraft"
-	"MetaChat/app/metaChat/qqBot"
-	"MetaChat/app/metaChat/router"
+	"MetaChat/app/metaChat/qq"
+	"MetaChat/pkg/qqBot"
 	"MetaChat/pkg/signal"
+	"context"
 	"github.com/spf13/viper"
+	"github.com/tidwall/gjson"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
 
 type MetaChat struct {
-	log       *zap.Logger
-	viper     *viper.Viper
-	config    *config.Config
-	mcHandler *minecraft.MCEventHandler
+	log    *zap.Logger
+	viper  *viper.Viper
+	config *config.Config
+
+	qqMsgCh <-chan gjson.Result
+	mcMsgCh <-chan gjson.Result
 
 	stopCh chan chan bool
 	stop   *signal.StopHandler
-
-	qqBot *qqBot.QQBot
+	qq     *qq.QQ
 }
 
 func (meta *MetaChat) OnStart() error {
+	qqBot.AddHandler(meta.qq.MessageHandler)
 	meta.stop.Add(meta)
-	meta.qqBot.OnStart()
 	go func() {
 		if err := meta.Listen(); err != nil {
 			meta.log.Error("error while listening", zap.Error(err))
@@ -43,34 +45,41 @@ func (meta *MetaChat) OnStop() error {
 }
 
 func (meta *MetaChat) Listen() error {
-	qqMsgCh := meta.qqBot.GetMessageCh()
+
 	for {
 		select {
 		case done := <-meta.stopCh:
 			done <- true
-		case cqMsgJson := <-qqMsgCh:
+		case cqMsgJson := <-meta.qqMsgCh:
 			go meta.handleCQMessage(cqMsgJson)
-			//case mcMsgJson := <-meta.mcReceiveCh:
-			//	eventBridge.LogCQEvent(meta.log, mcMsgJson)
 		}
 	}
 }
 
-func NewMetaChat(log *zap.Logger, viper *viper.Viper, mc *minecraft.MCEventHandler, stop *signal.StopHandler, bot *qqBot.QQBot) app.APP {
+func NewMetaChat(log *zap.Logger, viper *viper.Viper, stop *signal.StopHandler, qq *qq.QQ) app.APP {
 	return &MetaChat{
-		log:       log,
-		viper:     viper,
-		mcHandler: mc,
-		stopCh:    make(chan chan bool),
-		stop:      stop,
-		qqBot:     bot,
+		log:     log,
+		viper:   viper,
+		stopCh:  make(chan chan bool),
+		stop:    stop,
+		qqMsgCh: qq.GetThrow(),
+		qq:      qq,
 	}
 }
 
 func Provide() fx.Option {
 	return fx.Options(
 		fx.Provide(NewMetaChat),
-		router.Provide(),
-		fx.Options(qqBot.Provide(), minecraft.Provide()),
+		fx.Options(qqBot.Provide(), qq.Provide()),
+		fx.Invoke(func(meta app.APP, lc fx.Lifecycle) {
+			lc.Append(fx.Hook{
+				OnStart: func(ctx context.Context) error {
+					return meta.OnStart()
+				},
+				OnStop: func(ctx context.Context) error {
+					return meta.OnStop()
+				},
+			})
+		}),
 	)
 }

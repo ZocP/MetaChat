@@ -1,9 +1,9 @@
 package ws
 
 import (
-	"MetaChat/app/metaChat/qqBot/config"
-	"MetaChat/app/metaChat/qqBot/io"
 	"MetaChat/pkg/cq"
+	"MetaChat/pkg/qqBot/config"
+	"MetaChat/pkg/qqBot/io"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/tidwall/gjson"
@@ -15,6 +15,7 @@ type WS struct {
 	connected bool
 	config    *config.Config
 	messageCh chan gjson.Result
+	writeCh   chan cq.CQResp
 	rawCh     chan []byte
 	ready     chan bool
 	stopCh    chan bool
@@ -26,13 +27,7 @@ func (ws *WS) GetMessageCh() <-chan gjson.Result {
 }
 
 func (ws *WS) SendMessage(msg cq.CQResp) {
-	if err := ws.Conn.WriteJSON(msg); err != nil {
-		ws.log.Error("send message error", zap.Error(err))
-		if websocket.IsCloseError(err) {
-			ws.log.Info("websocket closed")
-			ws.connected = false
-		}
-	}
+	ws.writeCh <- msg
 }
 
 func (ws *WS) GetOnReadyCh() <-chan bool {
@@ -46,11 +41,13 @@ func NewWS(config *config.Config, log *zap.Logger) io.IOHandler {
 		messageCh: make(chan gjson.Result),
 		rawCh:     make(chan []byte),
 		ready:     make(chan bool),
+		writeCh:   make(chan cq.CQResp),
 		stopCh:    make(chan bool),
 	}
 }
 
 func (ws *WS) OnConnect() gin.HandlerFunc {
+	ws.log.Info("websocket connected")
 	return func(c *gin.Context) {
 		conn, err := Upgrade(c.Writer, c.Request)
 		if err != nil {
@@ -84,7 +81,18 @@ func (ws *WS) listen() {
 			ws.log.Info("websocket closed")
 			return
 		case raw := <-ws.rawCh:
-			ws.messageCh <- gjson.Parse(string(raw))
+			data := gjson.Parse(string(raw))
+			if data.Get(cq.META_EVENT_TYPE).String() != cq.META_EVENT_TYPE_HEARTBEAT {
+				ws.messageCh <- data
+			}
+		case write := <-ws.writeCh:
+			if err := ws.Conn.WriteJSON(write); err != nil {
+				ws.log.Error("send message error", zap.Error(err))
+				if websocket.IsCloseError(err) {
+					ws.log.Info("websocket closed")
+					ws.connected = false
+				}
+			}
 		}
 	}
 }

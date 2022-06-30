@@ -42,4 +42,9 @@ const (
 	NOTICE_TYPE                = "notice_type"
 	NOTICE_TYPE_GROUP_INCREASE = "group_increase"
 	NOTICE_TYPE_GROUP_DECREASE = "group_reduce"
+
+	WORDING = "wording"
+
+	SENDER        = "sender"
+	SENDER_USERID = SENDER + "." + USER_ID
 )

@@ -1,17 +1,16 @@
 package router
 
 import (
-	"MetaChat/app/metaChat/minecraft"
-	"MetaChat/app/metaChat/qqBot/io"
 	"MetaChat/pkg/http"
+	"MetaChat/pkg/qqBot/io"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 )
 
-func InitRouters(cqio io.IOHandler, mc *minecraft.MCEventHandler) http.InitRouters {
+func InitRouters(cqio io.IOHandler) http.InitRouters {
 	return func(r *gin.Engine) {
 		r.GET("/v1/cq", cqio.OnConnect())
-		r.POST("/v1/minecraft/event", mc.OnEvent())
+		//r.POST("/v1/minecraft/event", mc.OnEvent())
 	}
 }
 
