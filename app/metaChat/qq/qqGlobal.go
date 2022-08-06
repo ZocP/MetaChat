@@ -1,9 +1,9 @@
 package qq
 
 import (
-	"MetaChat/pkg/cq"
-	"MetaChat/pkg/cq/condition"
-	"MetaChat/pkg/qqBot"
+	"MetaChat/pkg/qqbot_framework/commute"
+	"MetaChat/pkg/util/cq"
+	"MetaChat/pkg/util/cq/condition"
 	"github.com/rfyiamcool/go-timewheel"
 	"github.com/tidwall/gjson"
 	"go.uber.org/fx"
@@ -13,28 +13,33 @@ import (
 )
 
 type QQ struct {
-	qqBot.Context
+	commute.Context
 	sync.Locker
-	log     *zap.Logger
+	log *zap.Logger
+
+	//提交给上层的消息
 	throwCh chan gjson.Result
 
 	echoHandlerMap      *sync.Map
 	waitForConditionMap *sync.Map
 	//	echoHandlerMap map[string]chan gjson.Result
 
+	//全局时间轮
 	tw *timewheel.TimeWheel
 
 	cmdHandlers map[string][]CMDHandler
 }
 
-func (qq *QQ) MessageHandler(ctx qqBot.Context, msg gjson.Result) {
+func (qq *QQ) MessageHandler(ctx commute.Context, msg gjson.Result) {
 	qq.log.Debug("收到CQ消息", zap.Any("msg", msg))
 
+	//检查消息是否是以前的上下文，如果是则将消息交给channel处理
 	if ch, ok := qq.echoHandlerMap.LoadAndDelete(msg.Get(cq.ECHO).String()); ok {
 		ch.(chan gjson.Result) <- msg
 		return
 	}
 
+	//检查消息是否符合注册的条件，如果是则交给相应的handler处理
 	qq.waitForConditionMap.Range(func(key, value interface{}) bool {
 		if key.(*condition.Condition).Fit(msg) {
 			value.(chan gjson.Result) <- msg
@@ -52,11 +57,12 @@ func (qq *QQ) MessageHandler(ctx qqBot.Context, msg gjson.Result) {
 	}
 }
 
+//设置一个等待消息的通道，使用AwaitConditionResult()可以获取结果
 func (qq *QQ) SetAwaitCondition(condition *condition.Condition) {
 	qq.waitForConditionMap.Store(condition, make(chan gjson.Result))
 }
 
-//返回值 结果或一个bool， 如果bool是true则代表超时，应该主动退出当前的handler
+//返回结果或是否超时， 如果bool是true则代表超时，应主动退出当前的Handler
 func (qq *QQ) AwaitConditionResult(condition *condition.Condition) (gjson.Result, bool) {
 	var msg gjson.Result
 	ch, ok := qq.waitForConditionMap.Load(condition)
@@ -75,7 +81,6 @@ func (qq *QQ) AwaitConditionResult(condition *condition.Condition) (gjson.Result
 			return gjson.Result{}, true
 		}
 	}
-
 }
 
 func (qq *QQ) NewStop() chan bool {
@@ -114,11 +119,11 @@ func (qq *QQ) throw(result gjson.Result) {
 	qq.throwCh <- result
 }
 
-func (qq *QQ) GetThrow() <-chan gjson.Result {
+func (qq *QQ) GetThrowCh() <-chan gjson.Result {
 	return qq.throwCh
 }
 
-func NewQQ(log *zap.Logger, bot qqBot.Context) *QQ {
+func NewQQ(log *zap.Logger, bot commute.Context) *QQ {
 	tw, err := timewheel.NewTimeWheel(1*time.Second, 360)
 	if err != nil {
 		log.Error("初始化时间轮失败，有些服务可能无法正常运行", zap.Error(err))
@@ -134,6 +139,8 @@ func NewQQ(log *zap.Logger, bot qqBot.Context) *QQ {
 		waitForConditionMap: &sync.Map{},
 		tw:                  tw,
 	}
+
+	commute.AddHandler(result.MessageHandler)
 
 	result.onStart()
 	return result

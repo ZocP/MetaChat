@@ -1,7 +1,7 @@
-package qqBot
+package commute
 
 import (
-	"MetaChat/pkg/cq"
+	"MetaChat/pkg/util/cq"
 	"go.uber.org/zap"
 )
 
@@ -13,7 +13,7 @@ func (i *ImplContext) OnStart() {
 	i.QQBot.OnStart()
 }
 
-func (i *ImplContext) SendMessage(msg cq.CQResp) {
+func (i *ImplContext) SendMessage(msg cq.CQResponse) {
 	i.QQBot.sendMessage(msg)
 }
 

@@ -1,6 +1,7 @@
-package network
+package util
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/tidwall/gjson"
 	"io/ioutil"
@@ -30,6 +31,29 @@ func GetFromUrlJSON(url string, query map[string]string) (gjson.Result, error) {
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println(err)
+		return gjson.Result{}, err
+	}
+	return gjson.ParseBytes(body), nil
+}
+
+func NewJsonPostRequest(url string, body []byte) (gjson.Result, error) {
+	method := "POST"
+	client := &http.Client{}
+	req, err := http.NewRequest(method, url, ioutil.NopCloser(bytes.NewBuffer(body)))
+	if err != nil {
+		fmt.Println(err)
+		return gjson.Result{}, err
+	}
+	res, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return gjson.Result{}, err
+	}
+	defer res.Body.Close()
+
+	body, err = ioutil.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println(err)
 		return gjson.Result{}, err

@@ -4,7 +4,8 @@ import (
 	"MetaChat/app"
 	"MetaChat/app/metaChat/config"
 	"MetaChat/app/metaChat/qq"
-	"MetaChat/pkg/qqBot"
+	"MetaChat/pkg/minecraft"
+	"MetaChat/pkg/qqbot_framework/commute"
 	"MetaChat/pkg/signal"
 	"context"
 	"github.com/spf13/viper"
@@ -24,10 +25,10 @@ type MetaChat struct {
 	stopCh chan chan bool
 	stop   *signal.StopHandler
 	qq     *qq.QQ
+	mc     minecraft.Context
 }
 
 func (meta *MetaChat) OnStart() error {
-	qqBot.AddHandler(meta.qq.MessageHandler)
 	meta.stop.Add(meta)
 	go func() {
 		if err := meta.Listen(); err != nil {
@@ -45,24 +46,26 @@ func (meta *MetaChat) OnStop() error {
 }
 
 func (meta *MetaChat) Listen() error {
-
 	for {
 		select {
 		case done := <-meta.stopCh:
 			done <- true
-		case cqMsgJson := <-meta.qqMsgCh:
-			go meta.handleCQMessage(cqMsgJson)
+		case msg := <-meta.qqMsgCh:
+			go meta.handleCQMessage(msg)
+		case msg := <-meta.mcMsgCh:
+			go meta.handleMCMessage(msg)
 		}
 	}
 }
 
-func NewMetaChat(log *zap.Logger, viper *viper.Viper, stop *signal.StopHandler, qq *qq.QQ) app.APP {
+func NewMetaChat(log *zap.Logger, viper *viper.Viper, stop *signal.StopHandler, qq *qq.QQ, mc minecraft.Context) app.APP {
 	return &MetaChat{
 		log:     log,
 		viper:   viper,
 		stopCh:  make(chan chan bool),
 		stop:    stop,
-		qqMsgCh: qq.GetThrow(),
+		qqMsgCh: qq.GetThrowCh(),
+		mcMsgCh: mc.GetThrowCh(),
 		qq:      qq,
 	}
 }
@@ -70,7 +73,9 @@ func NewMetaChat(log *zap.Logger, viper *viper.Viper, stop *signal.StopHandler, 
 func Provide() fx.Option {
 	return fx.Options(
 		fx.Provide(NewMetaChat),
-		fx.Options(qqBot.Provide(), qq.Provide()),
+		fx.Options(qq.Provide()),
+		commute.Provide(),
+		minecraft.Provide(),
 		fx.Invoke(func(meta app.APP, lc fx.Lifecycle) {
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {

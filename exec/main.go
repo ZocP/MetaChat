@@ -2,13 +2,13 @@ package main
 
 import (
 	"MetaChat/app"
-	"MetaChat/app/metaChat"
 	"MetaChat/pkg/http"
 	"MetaChat/pkg/log"
 	"MetaChat/pkg/router"
 	"MetaChat/pkg/signal"
 	"MetaChat/pkg/viper"
 	"context"
+	"fmt"
 	"go.uber.org/fx"
 )
 
@@ -17,7 +17,9 @@ func main() {
 }
 
 func Launch() {
-	fx.New(initPackages(), metaChat.Provide()).Run()
+	//fx.New(initPackages(), metaChat.Provide()).Run()
+	e5 := 6
+	fmt.Println(e5)
 	//qqBot.AddConditionHandler(condition.NewCondition(
 	//	map[string]string{
 	//		cq.SENDER_USERID: "1395437934",

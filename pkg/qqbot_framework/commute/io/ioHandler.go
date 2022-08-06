@@ -1,14 +1,14 @@
 package io
 
 import (
-	"MetaChat/pkg/cq"
+	"MetaChat/pkg/util/cq"
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
 )
 
 type IOHandler interface {
-	OnConnect() gin.HandlerFunc
+	Handler() gin.HandlerFunc
 	GetMessageCh() <-chan gjson.Result
-	SendMessage(msg cq.CQResp)
+	SendMessage(msg cq.CQResponse)
 	GetOnReadyCh() <-chan bool
 }

@@ -13,7 +13,7 @@ const (
 	ACTION_GET_FRIEND_LIST = "get_friend_list"
 )
 
-type CQResp struct {
+type CQResponse struct {
 	Action string      `json:"action"`
 	Params interface{} `json:"params"`
 	Echo   string      `json:"echo"`
@@ -32,8 +32,8 @@ type CQGetGroupInfoMessage struct {
 	NoCache bool  `json:"no_cache"`
 }
 
-func GetCQResp(action string, param interface{}) CQResp {
-	return CQResp{
+func CQResp(action string, param interface{}) CQResponse {
+	return CQResponse{
 		Action: action,
 		Params: param,
 		//current time to string
@@ -41,9 +41,9 @@ func GetCQResp(action string, param interface{}) CQResp {
 	}
 }
 
-func GetCQRespEcho(action string, param interface{}) (CQResp, string) {
+func CQRespEcho(action string, param interface{}) (CQResponse, string) {
 	t := strconv.FormatInt(time.Now().UnixMicro(), 10)
-	return CQResp{
+	return CQResponse{
 		Action: action,
 		Params: param,
 		//current time to string
@@ -51,7 +51,7 @@ func GetCQRespEcho(action string, param interface{}) (CQResp, string) {
 	}, t
 }
 
-func GetNormalMessage(messageType string, userID int64, groupID int64, message string, autoEscape bool) CQNormalMessage {
+func NewCQNormalMessage(messageType string, userID int64, groupID int64, message string, autoEscape bool) CQNormalMessage {
 	return CQNormalMessage{
 		MessageType: messageType,
 		UserID:      userID,
@@ -61,7 +61,7 @@ func GetNormalMessage(messageType string, userID int64, groupID int64, message s
 	}
 }
 
-func GetPrivateMessage(userID int64, message string) CQNormalMessage {
+func NewCQPrivateMessage(userID int64, message string) CQNormalMessage {
 	return CQNormalMessage{
 		MessageType: MESSAGE_TYPE_PRIVATE,
 		UserID:      userID,
@@ -70,7 +70,7 @@ func GetPrivateMessage(userID int64, message string) CQNormalMessage {
 	}
 }
 
-func GetGroupMessage(groupID int64, message string) CQNormalMessage {
+func GroupMessage(groupID int64, message string) CQNormalMessage {
 	return CQNormalMessage{
 		MessageType: MESSAGE_TYPE_GROUP,
 		GroupID:     groupID,
@@ -79,35 +79,25 @@ func GetGroupMessage(groupID int64, message string) CQNormalMessage {
 	}
 }
 
-func GetMessageQuick(msg gjson.Result, message string) CQNormalMessage {
+func CQMessageQuick(msg gjson.Result, message string) CQNormalMessage {
 	switch msg.Get(MESSAGE_TYPE).String() {
 	case MESSAGE_TYPE_GROUP:
-		return GetGroupMessage(msg.Get(GROUP_ID).Int(), message)
+		return GroupMessage(msg.Get(GROUP_ID).Int(), message)
 	case MESSAGE_TYPE_PRIVATE:
-		return GetPrivateMessage(msg.Get(USER_ID).Int(), message)
+		return NewCQPrivateMessage(msg.Get(USER_ID).Int(), message)
 	}
-	return GetNormalMessage(msg.Get(MESSAGE_TYPE).String(), msg.Get(USER_ID).Int(), msg.Get(GROUP_ID).Int(), message, false)
+	return NewCQNormalMessage(msg.Get(MESSAGE_TYPE).String(), msg.Get(USER_ID).Int(), msg.Get(GROUP_ID).Int(), message, false)
 }
 
-func GetMessageAt(id int64, message string, at string) CQNormalMessage {
-	switch at {
-	case MESSAGE_TYPE_GROUP:
-		return GetGroupMessage(id, message)
-	case MESSAGE_TYPE_PRIVATE:
-		return GetPrivateMessage(id, message)
-	}
-	panic("not implemented")
-}
-
-func GetGroupInfoMessage(groupID int64) CQGetGroupInfoMessage {
+func CQGroupInfoMessage(groupID int64) CQGetGroupInfoMessage {
 	return CQGetGroupInfoMessage{
 		GroupID: groupID,
 		NoCache: true,
 	}
 }
 
-func GetUserInfo(userID int64) CQResp {
+func GetUserInfo(userID int64) CQResponse {
 	//TODO get user info
-	//return GetCQResp(ACTION_GET_LOGIN_INFO, (userID))
+	//return CQResp(ACTION_GET_LOGIN_INFO, (userID))
 	panic("not implemented")
 }

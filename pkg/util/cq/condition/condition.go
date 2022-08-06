@@ -15,6 +15,7 @@ func NewCondition(mp map[string]string) *Condition {
 	return &Condition{mp: mp}
 }
 
+//判断某个消息是否符合该条件
 func (c *Condition) Fit(msg gjson.Result) bool {
 	for k, v := range c.mp {
 		value := msg.Get(k).Value()

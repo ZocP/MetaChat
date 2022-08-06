@@ -1,8 +1,8 @@
-package qqBot
+package commute
 
 import (
-	"MetaChat/pkg/cq"
-	"MetaChat/pkg/cq/condition"
+	"MetaChat/pkg/util/cq"
+	"MetaChat/pkg/util/cq/condition"
 	"github.com/tidwall/gjson"
 	"go.uber.org/zap"
 	"sync"
@@ -11,7 +11,7 @@ import (
 type Context interface {
 	Log() *zap.Logger
 	OnStart()
-	SendMessage(msg cq.CQResp)
+	SendMessage(msg cq.CQResponse)
 }
 
 type EventHandler func(ctx Context, msg gjson.Result)

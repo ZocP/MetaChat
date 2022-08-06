@@ -1,12 +1,12 @@
-package qqBot
+package commute
 
 import (
-	"MetaChat/pkg/cq"
-	"MetaChat/pkg/cq/condition"
-	"MetaChat/pkg/qqBot/config"
-	"MetaChat/pkg/qqBot/io"
-	"MetaChat/pkg/qqBot/io/ws"
+	"MetaChat/pkg/qqbot_framework/commute/config"
+	"MetaChat/pkg/qqbot_framework/commute/io"
+	"MetaChat/pkg/qqbot_framework/commute/io/ws"
 	"MetaChat/pkg/signal"
+	"MetaChat/pkg/util/cq"
+	"MetaChat/pkg/util/cq/condition"
 	"context"
 	"github.com/tidwall/gjson"
 	"go.uber.org/fx"
@@ -70,7 +70,7 @@ func (qq *QQBot) OnStop() error {
 	return nil
 }
 
-func (qq *QQBot) sendMessage(msg cq.CQResp) {
+func (qq *QQBot) sendMessage(msg cq.CQResponse) {
 	qq.IOHandler.SendMessage(msg)
 }
 
@@ -94,7 +94,7 @@ func (qq *QQBot) onMessage(msg gjson.Result) {
 
 func (qq *QQBot) notifyStop() {
 	//TODO: Do something when bot is stopped
-	//qq.sendMessage(cq.GetCQResp(cq.ACTION_SEND_MESSAGE, cq.GetPrivateMessage()))
+	//qq.sendMessage(cq.CQResp(cq.ACTION_SEND_MESSAGE, cq.NewCQPrivateMessage()))
 }
 
 func (qq *QQBot) initContext() {
