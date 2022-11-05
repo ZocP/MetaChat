@@ -1,7 +1,7 @@
 package qq
 
 import (
-	"MetaChat/pkg/qqbot_framework/command"
+	"MetaChat/pkg/cqhttp/command"
 	"MetaChat/pkg/saucenao"
 	"MetaChat/pkg/util/cq"
 	"MetaChat/pkg/util/cq/condition"

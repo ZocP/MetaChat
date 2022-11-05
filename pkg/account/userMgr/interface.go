@@ -2,7 +2,7 @@ package userMgr
 
 import (
 	"MetaChat/pkg/account/pkg/user"
-	"MetaChat/pkg/qqbot_framework/command"
+	"MetaChat/pkg/cqhttp/command"
 )
 
 type IUserManager interface {

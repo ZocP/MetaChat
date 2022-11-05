@@ -8,8 +8,9 @@ import (
 	"MetaChat/pkg/signal"
 	"MetaChat/pkg/viper"
 	"context"
-	"fmt"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
+	"os/exec"
 )
 
 func main() {
@@ -17,17 +18,26 @@ func main() {
 }
 
 func Launch() {
+	log := log.NewLogger(nil)
 	//fx.New(initPackages(), metaChat.Provide()).Run()
-	e5 := 6
-	fmt.Println(e5)
-	//qqBot.AddConditionHandler(condition.NewCondition(
-	//	map[string]string{
-	//		cq.SENDER_USERID: "1395437934",
-	//	},
-	//), func(ctx qqBot.Context, msg gjson.Result) {
-	//	ctx.SendMessage(cq.GetCQResp(cq.ACTION_SEND_MESSAGE, cq.GetMessageQuick(msg, "test")))
-	//})
-	//fx.New(initPackages(), qqBot.Provide()).Run()
+	cmd := exec.Command("./files/cqhttp/go-cqhttp")
+
+	//cmd.Dir = "./files/cqhttp"
+	out, err := cmd.StdoutPipe()
+	if err != nil {
+		log.Error("cq http not found, please init manually", zap.Error(err))
+	}
+	if err := cmd.Run(); err != nil {
+		log.Error("cq http not found, please init manually", zap.Error(err))
+	}
+	for {
+		tmp := make([]byte, 1024)
+		o, err := out.Read(tmp)
+		zap.S().Debug("output from cq: ", zap.String("info", string(rune(o))))
+		if err != nil {
+			break
+		}
+	}
 }
 
 func initPackages() fx.Option {

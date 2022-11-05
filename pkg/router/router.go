@@ -1,9 +1,9 @@
 package router
 
 import (
+	"MetaChat/pkg/cqhttp/commute/io"
 	"MetaChat/pkg/http"
 	io2 "MetaChat/pkg/minecraft/io"
-	"MetaChat/pkg/qqbot_framework/commute/io"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 )

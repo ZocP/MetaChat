@@ -1,8 +1,8 @@
 package qq
 
 import (
-	"MetaChat/pkg/qqbot_framework/command"
-	"MetaChat/pkg/qqbot_framework/commute"
+	"MetaChat/pkg/cqhttp/command"
+	"MetaChat/pkg/cqhttp/commute"
 	"MetaChat/pkg/util/cq"
 	"github.com/tidwall/gjson"
 	"go.uber.org/zap"

@@ -1,7 +1,7 @@
 package qq
 
 import (
-	"MetaChat/pkg/qqbot_framework/commute"
+	"MetaChat/pkg/cqhttp/commute"
 	"MetaChat/pkg/util/cq"
 	"MetaChat/pkg/util/cq/condition"
 	"github.com/rfyiamcool/go-timewheel"

@@ -1,8 +1,8 @@
 package ws
 
 import (
-	"MetaChat/pkg/qqbot_framework/commute/config"
-	"MetaChat/pkg/qqbot_framework/commute/io"
+	"MetaChat/pkg/cqhttp/commute/config"
+	"MetaChat/pkg/cqhttp/commute/io"
 	"MetaChat/pkg/util/cq"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"

@@ -1,9 +1,9 @@
 package commute
 
 import (
-	"MetaChat/pkg/qqbot_framework/commute/config"
-	"MetaChat/pkg/qqbot_framework/commute/io"
-	"MetaChat/pkg/qqbot_framework/commute/io/ws"
+	"MetaChat/pkg/cqhttp/commute/config"
+	"MetaChat/pkg/cqhttp/commute/io"
+	"MetaChat/pkg/cqhttp/commute/io/ws"
 	"MetaChat/pkg/signal"
 	"MetaChat/pkg/util/cq"
 	"MetaChat/pkg/util/cq/condition"
@@ -11,6 +11,7 @@ import (
 	"github.com/tidwall/gjson"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"os/exec"
 )
 
 type QQBot struct {
@@ -36,6 +37,7 @@ func NewQQBot(log *zap.Logger, config *config.Config, handler io.IOHandler, stop
 }
 
 func (qq *QQBot) OnStart() {
+	qq.launchCQ()
 	qq.connReadyCh = qq.IOHandler.GetOnReadyCh()
 	qq.log.Info("framework started, waiting for connection ready")
 	msgCh := qq.IOHandler.GetMessageCh()
@@ -90,6 +92,28 @@ func (qq *QQBot) onMessage(msg gjson.Result) {
 		}
 		return true
 	})
+}
+
+func (qq *QQBot) launchCQ() {
+	//On linux
+	go func() {
+		cmd := exec.Command("./go-cqhttp")
+		cmd.Dir = "./files/cqhttp"
+		out, _ := cmd.StdoutPipe()
+		if err := cmd.Run(); err != nil {
+			qq.log.Error("cq http not found, please init manually", zap.Error(err))
+		}
+		for {
+			tmp := make([]byte, 1024)
+			o, err := out.Read(tmp)
+			qq.log.Debug("output from cq: ", zap.String("info", string(rune(o))))
+			if err != nil {
+				break
+			}
+		}
+
+	}()
+
 }
 
 func (qq *QQBot) notifyStop() {
