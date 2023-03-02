@@ -12,7 +12,7 @@ const (
 
 func NewViper() *viper.Viper {
 	v := viper.New()
-
+	viper.GetViper()
 	v.SetConfigType(configType)
 	v.SetConfigFile(configPath)
 	if err := v.ReadInConfig(); err != nil {

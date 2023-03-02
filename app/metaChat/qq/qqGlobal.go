@@ -5,6 +5,7 @@ import (
 	"MetaChat/pkg/util/cq"
 	"MetaChat/pkg/util/cq/condition"
 	"github.com/rfyiamcool/go-timewheel"
+	"github.com/spf13/viper"
 	"github.com/tidwall/gjson"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -15,7 +16,8 @@ import (
 type QQ struct {
 	commute.Context
 	sync.Locker
-	log *zap.Logger
+	log   *zap.Logger
+	viper *viper.Viper
 
 	//提交给上层的消息
 	throwCh chan gjson.Result
@@ -28,6 +30,8 @@ type QQ struct {
 	tw *timewheel.TimeWheel
 
 	cmdHandlers map[string][]CMDHandler
+
+	chat bool
 }
 
 func (qq *QQ) MessageHandler(ctx commute.Context, msg gjson.Result) {
@@ -51,9 +55,9 @@ func (qq *QQ) MessageHandler(ctx commute.Context, msg gjson.Result) {
 
 	switch msg.Get(cq.POST_TYPE).String() {
 	case cq.POST_TYPE_MESSAGE:
-		qq.handleMessage(ctx, msg)
+		qq.handleMessage(msg)
 	case cq.POST_TYPE_REQUEST:
-		qq.handleRequest(ctx, msg)
+		//qq.handleRequest(msg)
 	}
 }
 
@@ -123,7 +127,7 @@ func (qq *QQ) GetThrowCh() <-chan gjson.Result {
 	return qq.throwCh
 }
 
-func NewQQ(log *zap.Logger, bot commute.Context) *QQ {
+func NewQQ(log *zap.Logger, bot commute.Context, viper *viper.Viper) *QQ {
 	tw, err := timewheel.NewTimeWheel(1*time.Second, 360)
 	if err != nil {
 		log.Error("初始化时间轮失败，有些服务可能无法正常运行", zap.Error(err))
@@ -138,6 +142,8 @@ func NewQQ(log *zap.Logger, bot commute.Context) *QQ {
 		echoHandlerMap:      &sync.Map{},
 		waitForConditionMap: &sync.Map{},
 		tw:                  tw,
+		chat:                false,
+		viper:               viper,
 	}
 
 	commute.AddHandler(result.MessageHandler)
@@ -152,9 +158,10 @@ func (qq *QQ) onStart() {
 }
 
 func (qq *QQ) registerCMDHandlers() {
-	qq.cmdHandlers["echo"] = []CMDHandler{qq.echo}
+	qq.cmdHandlers["echo"] = []CMDHandler{Echo}
 	qq.cmdHandlers["help"] = []CMDHandler{}
-	qq.cmdHandlers["识图"] = []CMDHandler{qq.recognize}
+	qq.cmdHandlers["识图"] = []CMDHandler{Recognize}
+	qq.cmdHandlers["chat"] = []CMDHandler{Chat}
 }
 
 func Provide() fx.Option {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"MetaChat/app"
+	"MetaChat/app/metaChat"
 	"MetaChat/pkg/http"
 	"MetaChat/pkg/log"
 	"MetaChat/pkg/router"
@@ -9,8 +10,6 @@ import (
 	"MetaChat/pkg/viper"
 	"context"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
-	"os/exec"
 )
 
 func main() {
@@ -18,26 +17,26 @@ func main() {
 }
 
 func Launch() {
-	log := log.NewLogger(nil)
-	//fx.New(initPackages(), metaChat.Provide()).Run()
-	cmd := exec.Command("./files/cqhttp/go-cqhttp")
-
-	//cmd.Dir = "./files/cqhttp"
-	out, err := cmd.StdoutPipe()
-	if err != nil {
-		log.Error("cq http not found, please init manually", zap.Error(err))
-	}
-	if err := cmd.Run(); err != nil {
-		log.Error("cq http not found, please init manually", zap.Error(err))
-	}
-	for {
-		tmp := make([]byte, 1024)
-		o, err := out.Read(tmp)
-		zap.S().Debug("output from cq: ", zap.String("info", string(rune(o))))
-		if err != nil {
-			break
-		}
-	}
+	//log := log.NewLogger(nil)
+	fx.New(initPackages(), metaChat.Provide()).Run()
+	//cmd := exec.Command("./files/cqhttp/go-cqhttp")
+	//
+	////cmd.Dir = "./files/cqhttp"
+	//out, err := cmd.StdoutPipe()
+	//if err != nil {
+	//	log.Error("cq http not found, please init manually", zap.Error(err))
+	//}
+	//if err := cmd.Run(); err != nil {
+	//	log.Error("cq http not found, please init manually", zap.Error(err))
+	//}
+	//for {
+	//	tmp := make([]byte, 1024)
+	//	o, err := out.Read(tmp)
+	//	zap.S().Debug("output from cq: ", zap.String("info", string(rune(o))))
+	//	if err != nil {
+	//		break
+	//	}
+	//}
 }
 
 func initPackages() fx.Option {
@@ -47,6 +46,7 @@ func initPackages() fx.Option {
 		signal.Provide(),
 		viper.Provide(),
 		router.Provide(),
+		fx.Invoke(lc),
 	)
 }
 

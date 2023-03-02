@@ -7,7 +7,6 @@ import (
 	"MetaChat/pkg/cqhttp/commute"
 	"MetaChat/pkg/minecraft"
 	"MetaChat/pkg/signal"
-	"context"
 	"github.com/spf13/viper"
 	"github.com/tidwall/gjson"
 	"go.uber.org/fx"
@@ -52,8 +51,6 @@ func (meta *MetaChat) Listen() error {
 			done <- true
 		case msg := <-meta.qqMsgCh:
 			go meta.handleCQMessage(msg)
-		case msg := <-meta.mcMsgCh:
-			go meta.handleMCMessage(msg)
 		}
 	}
 }
@@ -75,16 +72,5 @@ func Provide() fx.Option {
 		fx.Provide(NewMetaChat),
 		fx.Options(qq.Provide()),
 		commute.Provide(),
-		minecraft.Provide(),
-		fx.Invoke(func(meta app.APP, lc fx.Lifecycle) {
-			lc.Append(fx.Hook{
-				OnStart: func(ctx context.Context) error {
-					return meta.OnStart()
-				},
-				OnStop: func(ctx context.Context) error {
-					return meta.OnStop()
-				},
-			})
-		}),
-	)
+		minecraft.Provide())
 }

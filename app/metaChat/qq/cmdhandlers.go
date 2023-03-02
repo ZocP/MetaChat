@@ -2,16 +2,18 @@ package qq
 
 import (
 	"MetaChat/pkg/cqhttp/command"
-	"MetaChat/pkg/saucenao"
+	"MetaChat/pkg/gpt"
+	"MetaChat/pkg/util/saucenao"
+
 	"MetaChat/pkg/util/cq"
 	"MetaChat/pkg/util/cq/condition"
 	"github.com/tidwall/gjson"
 	"go.uber.org/zap"
 )
 
-type CMDHandler func(msg gjson.Result, cmd command.Command)
+type CMDHandler func(qq *QQ, msg gjson.Result, cmd command.Command)
 
-func (qq *QQ) echo(msg gjson.Result, cmd command.Command) {
+func Echo(qq *QQ, msg gjson.Result, cmd command.Command) {
 	resp, echo := cq.CQRespEcho(cq.ACTION_SEND_MESSAGE, cq.CQMessageQuick(msg, cmd.RawParam))
 	qq.SendMessage(resp)
 	qq.SetAwaitMessage(echo)
@@ -23,7 +25,7 @@ func (qq *QQ) echo(msg gjson.Result, cmd command.Command) {
 	}
 }
 
-func (qq *QQ) recognize(msg gjson.Result, cmd command.Command) {
+func  Recognize(qq *QQ, msg gjson.Result, cmd command.Command) {
 	cdn := condition.NewCondition(
 		map[string]string{
 			cq.USER_ID: msg.Get(cq.USER_ID).String(),
@@ -43,4 +45,18 @@ func (qq *QQ) recognize(msg gjson.Result, cmd command.Command) {
 	} else {
 		qq.SendMessage(cq.CQResp(cq.ACTION_SEND_MESSAGE, cq.CQMessageQuick(msg, "不是一张图片哦")))
 	}
+}
+
+func Chat(qq *QQ, msg gjson.Result, cmd command.Command){
+	qq.Lock()
+	qq.chat = !qq.chat
+	lang := ""
+	if qq.chat {
+		lang = "聊天已开启"
+	}else{
+		lang = "聊天已关闭"
+	}
+	gpt.SetConfig(qq.viper)
+	qq.SendMessage(cq.CQResp(cq.ACTION_SEND_MESSAGE, cq.CQMessageQuick(msg, lang)))
+	qq.Unlock()
 }
