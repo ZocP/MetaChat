@@ -25,7 +25,7 @@ func Echo(qq *QQ, msg gjson.Result, cmd command.Command) {
 	}
 }
 
-func  Recognize(qq *QQ, msg gjson.Result, cmd command.Command) {
+func Recognize(qq *QQ, msg gjson.Result, cmd command.Command) {
 	cdn := condition.NewCondition(
 		map[string]string{
 			cq.USER_ID: msg.Get(cq.USER_ID).String(),
@@ -47,13 +47,13 @@ func  Recognize(qq *QQ, msg gjson.Result, cmd command.Command) {
 	}
 }
 
-func Chat(qq *QQ, msg gjson.Result, cmd command.Command){
+func Chat(qq *QQ, msg gjson.Result, cmd command.Command) {
 	qq.Lock()
 	qq.chat = !qq.chat
 	lang := ""
 	if qq.chat {
 		lang = "聊天已开启"
-	}else{
+	} else {
 		lang = "聊天已关闭"
 	}
 	gpt.SetConfig(qq.viper)

@@ -65,7 +65,7 @@ func SendReq(content string) (*Response, error) {
 		return nil, err
 	}
 	result := &Response{}
-	if err := json.Unmarshal(body, result); err != nil{
+	if err := json.Unmarshal(body, result); err != nil {
 		return nil, err
 	}
 
