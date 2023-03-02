@@ -8,3 +8,8 @@ log:
   maxAge: 3
   level: "debug"
   stdout: true
+  gpt:
+    model: "gpt-3.5-turbo"
+    apiKey: "Bearer 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
+"
+    maxToken: 500
