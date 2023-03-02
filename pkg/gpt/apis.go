@@ -1,21 +1,24 @@
 package gpt
 
-const (
-	USER      = "user"
-	SYSTEM    = "system"
+const(
+	USER = "user"
+	SYSTEM = "system"
 	ASSISTANT = "assistant"
+
 )
 
-type Request struct {
-	Model     string     `json:"model"`
-	Messages  []Messages `json:"messages"`
-	User      string     `json:"user"`
-	MaxTokens int64      `json:"max_tokens"`
+type Request struct{
+	Model   string  `json:"model"`
+	Messages []Messages `json:"messages"`
+	User    string  `json:"user"`
+	MaxTokens int64 `json:"max_tokens"`
 }
-type Messages struct {
+type Messages struct{
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
+
+
 
 type Response struct {
 	Id      string `json:"id"`
