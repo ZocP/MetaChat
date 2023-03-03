@@ -22,16 +22,18 @@ func (qq *QQ) handleMessage(msg gjson.Result) {
 	if !qq.chat {
 		return
 	}
-	if !cq.IsAtMe(msg.Get(cq.RAW_MESSAGE).String(), "3047430597") && msg.Get(cq.MESSAGE_TYPE).String() == cq.MESSAGE_TYPE_GROUP {
+	if !cq.IsAtMe(msg.Get(cq.RAW_MESSAGE).String(), "2186802171") && msg.Get(cq.MESSAGE_TYPE).String() == cq.MESSAGE_TYPE_GROUP {
 		return
 	}
 
 	req, err := gpt.SendReq(msg.Get(cq.RAW_MESSAGE).String())
-	if err == nil && req != nil && len(req.Choices) > 0 {
-		qq.SendMessage(cq.CQResp(cq.ACTION_SEND_MESSAGE, cq.CQMessageQuick(msg, req.Choices[0].Message.Content)))
-	} else {
+	if err != nil || req == nil || len(req.Choices) <= 0 {
 		qq.SendMessage(cq.CQResp(cq.ACTION_SEND_MESSAGE, cq.CQMessageQuick(msg, "聊天失败")))
+		qq.log.Error("聊天失败", zap.Error(err))
+		return
 	}
+
+	qq.SendMessage(cq.CQResp(cq.ACTION_SEND_MESSAGE, cq.CQMessageQuick(msg, req.Choices[0].Message.Content)))
 
 }
 
